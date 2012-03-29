@@ -1,0 +1,2 @@
+Whilst this project is open-source, I do not allow anyone to tinker with my code UNTIL the product has been created. Then I will open it up for modding.
+However, should you wish to FAIRLY contribute to my work, feel free to fork this repository and tinker. Should your ideas be accepted, you will receive due credit.
