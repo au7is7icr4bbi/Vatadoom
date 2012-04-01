@@ -22,14 +22,11 @@ namespace Vatadoom
         private Tile[][] tiles;
         private List<Texture2D> textures;
         private Player player;
-        private int playerLocationX;
-        private int playerLocationY;
         private Point spawn; // represents map grid coordinates, for use with save points
-        private int levelx = 0;
+        private int levelx = 2;
         private int width;
         private int height;
         private Random r;
-        bool levelEnded = false;
         private SpriteBatch spriteBatch;
         private float cameraXPosition;
         private float cameraYPosition;
@@ -39,7 +36,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new List<Texture2D>();
-            levelx = 0;
+            levelx = 2;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -67,6 +64,7 @@ namespace Vatadoom
         protected override void LoadContent()
         {
             textures.Clear();
+            waypoints.Clear();
             // using the level x, load the relevant textures into the texture list
             switch (levelx)
             {
@@ -80,20 +78,25 @@ namespace Vatadoom
                     // sewer
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/sewerWall"));
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/sewerInterior"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
+                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/water"));
+                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon")); // the cannon is a waypoint block with a texture
+                    textures.Add(Game.Content.Load<Texture2D>("Tiles/concrete"));
                     break;
                 case 2:
                     // tower
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/platform"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
+                    textures.Add(Game.Content.Load<Texture2D>("Tiles/concrete"));
+                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
+                    textures.Add(Game.Content.Load<Texture2D>("Tiles/ladder"));
+                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
                     break;
                 case 3:
                     // rooftops
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
+                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
+                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
                     break;
                 case 4:
                     // rooftops with spinner
@@ -101,7 +104,7 @@ namespace Vatadoom
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/powerline"));
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/spinner"));
                     break;
-                default:
+                default: // case 5 and above
                     // boss level
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/powerline"));
                     textures.Add(Game.Content.Load<Texture2D>("Tiles/spinner"));
@@ -125,51 +128,56 @@ namespace Vatadoom
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Update(GameTime gameTime)
         {
-            // if the level has ended, load the next level
-            if (levelEnded)
-                nextLevel();
             player.Update(gameTime);
+
+            // block movement off the screen
+            if (player.BoundingRectangle.Left <= 0)
+            {
+                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
+            }
+
+            else
+            {
+                // block immediately to the left, at head height
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40], 1, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
+            }
+
+            if (player.BoundingRectangle.Right >= width * 60)
+            {
+                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
+            }
+
+            else
+            {
+                // block immediately to the right, at head height
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40 + 1], 0, gameTime);
+            }
+
             if (player.BoundingRectangle.Bottom >= height * 40)
             {
                 // player has fell to their death. Respawn
                 player.resetRectangle(spawn);
             }
-            if (player.BoundingRectangle.Left <= 0)
-            {
-                player.BoundingRectangle.Offset(-(player.BoundingRectangle.Left), 0);
-            }
-            playerLocationX = (int)Math.Round((double)player.BoundingRectangle.Left / 60.0);
-            playerLocationY = (int)Math.Round((double)player.BoundingRectangle.Top / 40.0);
-
-            // block immediately to the right, at head height
-            if (playerLocationX + 1 < width)
-            {
-                if (playerLocationY + 1 < height)
-                    player.testCollisions(tiles[playerLocationX + 1][playerLocationY + 1], 0, gameTime);
-                player.testCollisions(tiles[playerLocationX + 1][playerLocationY], 0, gameTime);
-            }
-
-            // block immediately to the left, at head height
-            if (playerLocationX - 1 >= 0)
-            {
-                if (playerLocationY + 1 < height)
-                    player.testCollisions(tiles[playerLocationX - 1][playerLocationY - 1], 1, gameTime);
-                player.testCollisions(tiles[playerLocationX - 1][playerLocationY], 1, gameTime);
-            }
-
-            if (playerLocationY + 2 < height)
+            
+            else
             {
                 // block below the player
-                player.testCollisions(tiles[playerLocationX][playerLocationY + 2], 3, gameTime);
+                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
-            // block immediately above the player
-            if (playerLocationY - 1 >= 0)
+            if (player.BoundingRectangle.Top <= 0)
             {
-                player.testCollisions(tiles[playerLocationX][playerLocationY - 1], 2, gameTime);
+                // block vertical movement off the game screen
+                player.BoundingRectangle.Location = new Point(player.BoundingRectangle.X, 0);
             }
-            
-            // search around the player for collisions with tiles
+            else
+            {
+                // block immediately above the player
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
+            }
 
             base.Update(gameTime);
         }
@@ -185,7 +193,6 @@ namespace Vatadoom
             ScrollCamera(spriteBatch.GraphicsDevice.Viewport);
             Matrix cameraTransform = Matrix.CreateTranslation(-cameraXPosition, -cameraYPosition, 0.0f);
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, null, null, null, null, cameraTransform);
-            player.Draw(spriteBatch);
             
             // Calculate the visible range of tiles.
             int left = (int)Math.Floor(cameraXPosition / 60.0f);
@@ -196,10 +203,12 @@ namespace Vatadoom
             bottom = Math.Min(bottom, height - 1);
             
             // draw every tile
-            for (int i = left; i <= right; i++)
+            for (int i = left; i <= right + 1; i++)
                 for (int j = top; j <= bottom; j++)
                     if (tiles[i][j] != null)
                         tiles[i][j].Draw(spriteBatch);
+
+            player.Draw(spriteBatch);
             spriteBatch.End();
 
             spriteBatch.Begin();
@@ -209,6 +218,10 @@ namespace Vatadoom
             base.Draw(gameTime);
         }
 
+        /// <summary>
+        /// Load the current level from the text file
+        /// </summary>
+        /// <param name="reader">The level file stream (after width and height have been read in)</param>
         private void loadLevel(StreamReader reader)
         {
             int currentTile = 0;
@@ -222,38 +235,58 @@ namespace Vatadoom
                 {
                     case 'w':
                         // waypoint
-                        tiles[x][y] = new Tile(Game, new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
                         break;
                     case 'p':
                         // player tile. Spawn the player here
-                        tiles[x][y] = new Tile(Game, new Vector2(x * 60, y * 40), Tile.TileType.Player);
+                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Player);
                         player = new Player(Game, new Vector2(x * 60, y * 40), this);
-                        playerLocationX = x;
-                        playerLocationY = y;
                         spawn = new Point(x, y);
                         break;
                     case 'P':
                         // platform
-                        tiles[x][y] = new Tile(Game, new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        break;
+                    case 'W':
+                        tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerWall);
+                        break;
+                    case 'S':
+                        tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerInterior);
                         break;
                     case '.':
                         // air
-                        tiles[x][y] = new Tile(Game, new Vector2(x * 60.0f, y * 40), Tile.TileType.Air);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Air);
                         break;
                     case 'x':
                         // road
                         // swap between the two different textures
                         if (swap)
-                            tiles[x][y] = new Tile(Game, textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
                         else
-                            tiles[x][y] = new Tile(Game, textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
                         break;
                     case 'c':
-                        tiles[x][y] = new Tile(Game, textures.ElementAt(2), new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
+                        tiles[x][y] = new Tile(textures.ElementAt(2), new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
                         break;
                     case 's':
-                        tiles[x][y] = new Tile(Game, new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
                         waypoints.Add("s", new Waypoint(Waypoint.WaypointType.SavePoint, this, new Point(x, y)));
+                        break;
+                    case 'e':
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
+                        waypoints.Add("e", new Waypoint(Waypoint.WaypointType.EndLevel, this, new Point(x, y)));
+                        break;
+                    case 'B':
+                        tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior);
+                        break;
+                    case 'b':
+                        tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingWall);
+                        break;
+                    case '-':
+                        tiles[x][y] = new Tile(textures.ElementAt(3), new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        break;
+                    case '|':
+                        tiles[x][y] = new Tile(textures.ElementAt(4), new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder);
                         break;
                     case '\n':
                         // newline or EOF, reset the x value and increment the y value
@@ -271,12 +304,19 @@ namespace Vatadoom
             }
         }
 
+        /// <summary>
+        /// Load the next level
+        /// </summary>
         private void nextLevel()
         {
             levelx++;
             LoadContent();
         }
         
+        /// <summary>
+        /// Move the camera based on player position
+        /// </summary>
+        /// <param name="viewport">The current viewport</param>
         private void ScrollCamera(Viewport viewport)
         {
             const float ViewMargin = 0.35f;
@@ -311,15 +351,25 @@ namespace Vatadoom
             cameraYPosition = MathHelper.Clamp(cameraYPosition + cameraVMovement, 0.0f, maxCameraHeightPosition);
         }
         
+        /// <summary>
+        /// Handle all waypoint events, using the supplied waypoint data
+        /// </summary>
+        /// <param name="w">The waypoint that generated the event</param>
         public void handleEvent(Waypoint w)
         {
             if (w.Type == Waypoint.WaypointType.SavePoint)
             {
                 Point oldSpawn = spawn;
                 Vector2 pos = new Vector2(((float)oldSpawn.X * 60.0f), (float)(oldSpawn.Y * 40.0f));
-                tiles[oldSpawn.X][oldSpawn.Y] = new Tile(this.Game, pos, Tile.TileType.Air);
+                tiles[oldSpawn.X][oldSpawn.Y] = new Tile(pos, Tile.TileType.Air);
                 spawn = w.TileCoords;
-                tiles[spawn.X][spawn.Y] = new Tile(this.Game, new Vector2((float)spawn.X * 60.0f, (float)spawn.Y * 40.0f), Tile.TileType.Player);
+                // overwrite the waypoint with the player tile to set the new spawn point
+                tiles[spawn.X][spawn.Y] = new Tile(new Vector2((float)spawn.X * 60.0f, (float)spawn.Y * 40.0f), Tile.TileType.Player);
+            }
+            else if (w.Type == Waypoint.WaypointType.EndLevel)
+            {
+                if (w.TileCoords.X == player.BoundingRectangle.Right / 60 && w.TileCoords.Y == player.BoundingRectangle.Top / 40 + 1)
+                    nextLevel();
             }
         }
     }

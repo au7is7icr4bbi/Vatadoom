@@ -109,6 +109,7 @@
   <ItemGroup>
     <Compile Include="Layer.cs" />
     <Compile Include="Level.cs" />
+    <Compile Include="Map.cs" />
     <Compile Include="Menu.cs" />
     <Compile Include="Physics.cs" />
     <Compile Include="Player.cs" />

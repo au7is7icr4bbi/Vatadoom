@@ -26,7 +26,8 @@ namespace Vatadoom
             Platform,
             Air, // nothingness
             Waypoint, // waypoints for triggering special events
-            Powerline
+            Powerline,
+            Ladder
         };
 
         public enum CollisionType
@@ -37,11 +38,17 @@ namespace Vatadoom
         };
         public TileType tileType { get; private set; }
         public CollisionType collisionType { get; private set; }
+        public String ID { get; set; }
         private Texture2D texture;
         public Rectangle BoundingRectangle { get; private set; }
 
-        // constructor for visible tiles
-        public Tile(Game game, Texture2D t, Vector2 position, TileType type)
+        /// <summary>
+        /// Create a visible tile. Useful for floors, ceilings and walls (both in background and in entity space)
+        /// </summary>
+        /// <param name="t">The tile texture, pre-loaded in the level</param>
+        /// <param name="position">The tile's world coordinates</param>
+        /// <param name="type">The tile type, determined when it is initially read in</param>
+        public Tile(Texture2D t, Vector2 position, TileType type)
         {
             texture = t;
             BoundingRectangle = new Rectangle((int)position.X, (int)position.Y, 60, 40);
@@ -49,8 +56,12 @@ namespace Vatadoom
             setCollisions();
         }
 
-        // constructor for invisible tiles
-        public Tile(Game game, Vector2 position, TileType type)
+        /// <summary>
+        /// Create an invisible tile. USeful for the spawn tile or waypoint tiles
+        /// </summary>
+        /// <param name="position">The tile's world coordinates</param>
+        /// <param name="type">The tile type, determined when it is initially read in</param>
+        public Tile(Vector2 position, TileType type)
         {
             texture = null;
             BoundingRectangle = new Rectangle((int)position.X, (int)position.Y, 60, 40);
@@ -58,14 +69,19 @@ namespace Vatadoom
             setCollisions();
         }
 
-        // draw drawable tiles
+        /// <summary>
+        /// Draw all drawable tiles
+        /// </summary>
+        /// <param name="spriteBatch"></param>
         public void Draw(SpriteBatch spriteBatch)
         {
             if (texture != null)
                 spriteBatch.Draw(texture, BoundingRectangle, Color.White);
         }
 
-        // set the collision property based on the block type
+        /// <summary>
+        /// Set the collision property based on the tile's type
+        /// </summary>
         private void setCollisions()
         {
             switch (tileType)
@@ -96,6 +112,9 @@ namespace Vatadoom
                     break;
                 case TileType.Road:
                 case TileType.Concrete:
+                    collisionType = CollisionType.Solid;
+                    break;
+                case TileType.Ladder:
                     collisionType = CollisionType.Solid;
                     break;
                 default:
