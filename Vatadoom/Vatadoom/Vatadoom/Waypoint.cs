@@ -18,7 +18,12 @@ namespace Vatadoom
         {
             SavePoint,
             EndLevel,
-            Event
+            Event,
+            Spinner,
+            Jeep,
+            Minecart,
+            Rocket,
+            EndRide,
         };
 
         private WaypointHandler handler;

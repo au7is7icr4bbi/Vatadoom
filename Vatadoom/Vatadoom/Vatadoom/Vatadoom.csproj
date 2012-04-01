@@ -117,6 +117,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Tile.cs" />
+    <Compile Include="Vehicle.cs" />
     <Compile Include="Waypoint.cs" />
     <Compile Include="WaypointHandler.cs" />
   </ItemGroup>

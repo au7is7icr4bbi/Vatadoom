@@ -12,22 +12,23 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Vatadoom
 {
-    class Player
+    class Player : WaypointHandler
     {
         public Rectangle BoundingRectangle;
         private Texture2D texture;
-        private Physics physics;
+        public Physics Physics;
         private Level currentLevel;
         private float jumpSpeed = 200.0f;
         private float moveSpeed = 200.0f;
         bool canClimb = false;
         bool climbing = false;
+        public bool ridingVehicle = false;
         public Player(Game game, Vector2 pos, Level level)
         {
             texture = game.Content.Load<Texture2D>("Player/player");
             BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 80);
-            physics = new Physics();
-            physics.Velocity = jumpSpeed;
+            Physics = new Physics();
+            Physics.Velocity = jumpSpeed;
             currentLevel = level;
         }
 
@@ -38,51 +39,55 @@ namespace Vatadoom
         public void resetRectangle(Point spawn)
         {
             BoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40);
-            physics.Velocity = jumpSpeed;
+            Physics.Velocity = jumpSpeed;
         }
 
         public void Update(GameTime gameTime)
         {
-            // move right
-            if (Keyboard.GetState().IsKeyDown(Keys.D))
+            // if riding a vehicle, the vehicle controls the movement. Collision detection remains unchanged however
+            if (!ridingVehicle)
             {
-                BoundingRectangle.Offset((int)physics.horizontalMotion(BoundingRectangle.Center, moveSpeed, gameTime).X, 0);
-            }
-
-            // move left
-            if (Keyboard.GetState().IsKeyDown(Keys.A))
-            {
-                BoundingRectangle.Offset((int)physics.horizontalMotion(BoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
-            }
-
-            if (Keyboard.GetState().IsKeyDown(Keys.W))
-            {
-                if (canClimb)
+                // move right
+                if (Keyboard.GetState().IsKeyDown(Keys.D))
                 {
-                    climbing = true;
-                    BoundingRectangle.Offset(0, -(int)physics.staticVerticalMotion(BoundingRectangle.Center, moveSpeed, gameTime).Y);
+                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, moveSpeed, gameTime).X, 0);
                 }
-            }
 
-            if (Keyboard.GetState().IsKeyUp(Keys.W))
-            {
-                climbing = false;
-            }
-
-            // jump under the effects of gravity
-            if (Keyboard.GetState().IsKeyDown(Keys.Space))
-            {
-                BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
-            }
-
-            // simulate gravity
-            if (Keyboard.GetState().IsKeyUp(Keys.Space))
-            {
-                if (!climbing)
+                // move left
+                if (Keyboard.GetState().IsKeyDown(Keys.A))
                 {
-                    if (physics.Velocity > 0.0f)
-                        physics.Velocity = 0.0f;
-                    BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
+                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
+                }
+
+                if (Keyboard.GetState().IsKeyDown(Keys.W))
+                {
+                    if (canClimb)
+                    {
+                        climbing = true;
+                        BoundingRectangle.Offset(0, -(int)Physics.staticVerticalMotion(BoundingRectangle.Center, moveSpeed, gameTime).Y);
+                    }
+                }
+
+                if (Keyboard.GetState().IsKeyUp(Keys.W))
+                {
+                    climbing = false;
+                }
+
+                // jump under the effects of gravity
+                if (Keyboard.GetState().IsKeyDown(Keys.Space))
+                {
+                    BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                }
+
+                // simulate gravity
+                if (Keyboard.GetState().IsKeyUp(Keys.Space))
+                {
+                    if (!climbing)
+                    {
+                        if (Physics.Velocity > 0.0f)
+                            Physics.Velocity = 0.0f;
+                        BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                    }
                 }
             }
         }
@@ -133,15 +138,15 @@ namespace Vatadoom
                         else if (BoundingRectangle.Top < tile.BoundingRectangle.Bottom && side == 2)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Bottom);
-                            if (physics.Velocity > 0.0f)
-                                physics.Velocity = 0.0f;
+                            if (Physics.Velocity > 0.0f)
+                                Physics.Velocity = 0.0f;
                         }
 
                         // akin to landing on top of a solid block or platform
                         else if (BoundingRectangle.Bottom > tile.BoundingRectangle.Top && side == 3)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
-                            physics.Velocity = jumpSpeed;
+                            Physics.Velocity = jumpSpeed;
                         }
                     }
                 }
@@ -151,7 +156,7 @@ namespace Vatadoom
                     if (BoundingRectangle.Bottom > tile.BoundingRectangle.Top && side == 3)
                     {
                         BoundingRectangle.Offset(0, -(BoundingRectangle.Bottom - tile.BoundingRectangle.Top));
-                        physics.Velocity = jumpSpeed;
+                        Physics.Velocity = jumpSpeed;
                     }
                 }
                 // otherwise, the block is passable, so do not test any collisions for it
@@ -161,6 +166,21 @@ namespace Vatadoom
                     canClimb = false;
                 }
 
+            }
+        }
+        public void handleEvent(Waypoint w)
+        {
+            // begin riding vehicle
+
+            if (w.TileCoords.X == BoundingRectangle.Right / 60 && w.TileCoords.Y == BoundingRectangle.Top / 40 + 1)
+            {
+                // begin riding vehicle
+                if (w.Type == Waypoint.WaypointType.Spinner)
+                    ridingVehicle = true;
+
+                // end riding vehicle
+                else if (w.Type == Waypoint.WaypointType.EndRide)
+                    ridingVehicle = false;
             }
         }
     }

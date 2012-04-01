@@ -20,10 +20,10 @@ namespace Vatadoom
     {
         private Layer[] layers;
         private Tile[][] tiles;
-        private List<Texture2D> textures;
+        private Dictionary<String, Texture2D> textures;
         private Player player;
         private Point spawn; // represents map grid coordinates, for use with save points
-        private int levelx = 2;
+        private int levelx = 0;
         private int width;
         private int height;
         private Random r;
@@ -31,12 +31,13 @@ namespace Vatadoom
         private float cameraXPosition;
         private float cameraYPosition;
         public Dictionary<String, Waypoint> waypoints { get; set; }
+        private Song backingTrack;
         public Level(Game game, SpriteBatch spriteBatch)
             : base(game)
         {
             // TODO: Construct any child components here
-            textures = new List<Texture2D>();
-            levelx = 2;
+            textures = new Dictionary<String, Texture2D>();
+            levelx = 3;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -70,48 +71,53 @@ namespace Vatadoom
             {
                 case 0:
                     // highway
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/road-0"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/road-1"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/concrete"));
+                    textures.Add("road0", Game.Content.Load<Texture2D>("Tiles/road-0"));
+                    textures.Add("road1", Game.Content.Load<Texture2D>("Tiles/road-1"));
+                    textures.Add("concrete", Game.Content.Load<Texture2D>("Tiles/concrete"));
                     break;
                 case 1:
                     // sewer
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/sewerWall"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/sewerInterior"));
-                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/water"));
-                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon")); // the cannon is a waypoint block with a texture
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/concrete"));
+                    textures.Add("sewerWall", Game.Content.Load<Texture2D>("Tiles/sewerWall"));
+                    textures.Add("sewerInterior", Game.Content.Load<Texture2D>("Tiles/sewerInterior"));
+                    //textures.Add("water", Game.Content.Load<Texture2D>("Tiles/water"));
+                    //textures.Add("cannon", Game.Content.Load<Texture2D>("Tiles/cannon")); // the cannon is a waypoint block with a texture
+                    textures.Add("concrete",Game.Content.Load<Texture2D>("Tiles/concrete"));
                     break;
                 case 2:
                     // tower
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/concrete"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/ladder"));
-                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
+                    textures.Add("sewerWall", Game.Content.Load<Texture2D>("Tiles/sewerWall"));
+                    textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("buildingInterior", Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
+                    textures.Add("concrete", Game.Content.Load<Texture2D>("Tiles/concrete"));
+                    textures.Add("buildingPlatform", Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
+                    textures.Add("ladder", Game.Content.Load<Texture2D>("Tiles/ladder"));
+                    //textures.Add("cannon", Game.Content.Load<Texture2D>("Tiles/cannon"));
                     break;
                 case 3:
                     // rooftops
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
-                    //textures.Add(Game.Content.Load<Texture2D>("Tiles/cannon"));
+                    textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("buildingInterior", Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
+                    textures.Add("buildingPlatform", Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
+                    textures.Add("ladder", Game.Content.Load<Texture2D>("Tiles/ladder"));
+                    //textures.Add("cannon", Game.Content.Load<Texture2D>("Tiles/cannon"));
                     break;
                 case 4:
                     // rooftops with spinner
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/powerline"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/spinner"));
+                    textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("powerline", Game.Content.Load<Texture2D>("Tiles/powerline"));
+                    textures.Add("spinner", Game.Content.Load<Texture2D>("Tiles/spinner"));
                     break;
                 default: // case 5 and above
                     // boss level
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/powerline"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/spinner"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/bandit"));
-                    textures.Add(Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("powerline",Game.Content.Load<Texture2D>("Tiles/powerline"));
+                    textures.Add("spinner", Game.Content.Load<Texture2D>("Tiles/spinner"));
+                    textures.Add("bandit", Game.Content.Load<Texture2D>("Tiles/bandit"));
+                    textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     break;
             }
+            backingTrack = Game.Content.Load<Song>("Music/" + levelx);
+            MediaPlayer.IsRepeating = true;
+            MediaPlayer.Play(backingTrack);
             StreamReader reader = new StreamReader("Content/Levels/" + levelx + ".txt");
             width = int.Parse(reader.ReadLine());
             height = int.Parse(reader.ReadLine());
@@ -164,7 +170,6 @@ namespace Vatadoom
             else
             {
                 // block below the player
-                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
                 player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
@@ -203,7 +208,7 @@ namespace Vatadoom
             bottom = Math.Min(bottom, height - 1);
             
             // draw every tile
-            for (int i = left; i <= right + 1; i++)
+            for (int i = left; i <= right; i++)
                 for (int j = top; j <= bottom; j++)
                     if (tiles[i][j] != null)
                         tiles[i][j].Draw(spriteBatch);
@@ -248,10 +253,14 @@ namespace Vatadoom
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
                         break;
                     case 'W':
-                        tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerWall);
+                        tiles[x][y] = new Tile(textures["sewerWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerWall);
                         break;
                     case 'S':
-                        tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerInterior);
+                        tiles[x][y] = new Tile(textures["sewerInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerInterior);
+                        break;
+                    case 'V':
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
+                        waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Point(x, y)));
                         break;
                     case '.':
                         // air
@@ -261,12 +270,16 @@ namespace Vatadoom
                         // road
                         // swap between the two different textures
                         if (swap)
-                            tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures["road0"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
                         else
-                            tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures["road1"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                        break;
+                    case 'X':
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
+                        waypoints.Add("X", new Waypoint(Waypoint.WaypointType.EndRide, player, new Point(x, y)));
                         break;
                     case 'c':
-                        tiles[x][y] = new Tile(textures.ElementAt(2), new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
+                        tiles[x][y] = new Tile(textures["concrete"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
                         break;
                     case 's':
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
@@ -277,16 +290,16 @@ namespace Vatadoom
                         waypoints.Add("e", new Waypoint(Waypoint.WaypointType.EndLevel, this, new Point(x, y)));
                         break;
                     case 'B':
-                        tiles[x][y] = new Tile(textures.ElementAt(1), new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior);
+                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior);
                         break;
                     case 'b':
-                        tiles[x][y] = new Tile(textures.ElementAt(0), new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingWall);
+                        tiles[x][y] = new Tile(textures["buildingWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingWall);
                         break;
                     case '-':
-                        tiles[x][y] = new Tile(textures.ElementAt(3), new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        tiles[x][y] = new Tile(textures["buildingPlatform"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
                         break;
                     case '|':
-                        tiles[x][y] = new Tile(textures.ElementAt(4), new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder);
+                        tiles[x][y] = new Tile(textures["ladder"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder);
                         break;
                     case '\n':
                         // newline or EOF, reset the x value and increment the y value
@@ -326,8 +339,8 @@ namespace Vatadoom
             float marginLeft = cameraXPosition + marginWidth;
             float marginRight = cameraXPosition + viewport.Width - marginWidth;
             
-            const float TopMargin = 0.3f;
-            const float BottomMargin = 0.3f;
+            const float TopMargin = 0.5f;
+            const float BottomMargin = 0.5f;
             float marginTop = cameraYPosition + viewport.Height * TopMargin;
             float marginBottom = cameraYPosition + viewport.Height - viewport.Height * BottomMargin;
 
