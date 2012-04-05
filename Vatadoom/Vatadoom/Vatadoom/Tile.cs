@@ -117,6 +117,9 @@ namespace Vatadoom
                 case TileType.Ladder:
                     collisionType = CollisionType.Solid;
                     break;
+                case TileType.Powerline:
+                    collisionType = CollisionType.Platform;
+                    break;
                 default:
                     break;
             }

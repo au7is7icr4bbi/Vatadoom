@@ -38,9 +38,9 @@ namespace Vatadoom
         public override void Update(GameTime gameTime)
         {
             if (Keyboard.GetState().IsKeyDown(Keys.D))
-                player.BoundingRectangle.Offset(new Point(5, 5));
+                //player.BoundingRectangle.Offset(new Point(5, 5));
             if (Keyboard.GetState().IsKeyDown(Keys.A))
-                player.BoundingRectangle.Offset(new Point(-5, 5));
+                //player.BoundingRectangle.Offset(new Point(-5, 5));
             if (Keyboard.GetState().IsKeyDown(Keys.Enter))
             {
                 // start the level

@@ -27,9 +27,11 @@ namespace Vatadoom
         private int width;
         private int height;
         private Random r;
+        private Vehicle vehicle;
         private SpriteBatch spriteBatch;
         private float cameraXPosition;
         private float cameraYPosition;
+        private Point vehicleSpawn;
         public Dictionary<String, Waypoint> waypoints { get; set; }
         private Song backingTrack;
         public Level(Game game, SpriteBatch spriteBatch)
@@ -37,7 +39,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 3;
+            levelx = 4;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -45,6 +47,7 @@ namespace Vatadoom
             layers[1] = new Layer(Game.Content, "Backgrounds/Layer1", 0.5f);
             layers[2] = new Layer(Game.Content, "Backgrounds/Layer2", 0.8f);
             waypoints = new Dictionary<String, Waypoint>();
+            vehicle = null;
         }
 
         public void setSpriteBatch(SpriteBatch spriteBatch)
@@ -105,7 +108,6 @@ namespace Vatadoom
                     // rooftops with spinner
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     textures.Add("powerline", Game.Content.Load<Texture2D>("Tiles/powerline"));
-                    textures.Add("spinner", Game.Content.Load<Texture2D>("Tiles/spinner"));
                     break;
                 default: // case 5 and above
                     // boss level
@@ -135,33 +137,36 @@ namespace Vatadoom
         public override void Update(GameTime gameTime)
         {
             player.Update(gameTime);
+    
 
             // block movement off the screen
-            if (player.BoundingRectangle.Left <= 0)
+            if (player.TopBoundingRectangle.Left <= 0)
             {
-                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
+                player.TopBoundingRectangle.Location = new Point(0, player.TopBoundingRectangle.Location.Y);
+                player.BottomBoundingRectangle.Location = new Point(0, player.BottomBoundingRectangle.Location.Y);
             }
 
             else
             {
-                // block immediately to the left, at head height
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40], 1, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
+                // block immediately to the left
+                player.testCollisions(tiles[player.TopBoundingRectangle.Left / 60][player.BottomBoundingRectangle.Center.Y / 40], 1, gameTime);
+                player.testCollisions(tiles[player.BottomBoundingRectangle.Left / 60][player.BottomBoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
             }
 
-            if (player.BoundingRectangle.Right >= width * 60)
+            if (player.TopBoundingRectangle.Right >= width * 60)
             {
-                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
+                player.TopBoundingRectangle.Location = new Point(width * 60 - 60, player.TopBoundingRectangle.Y);
+                player.BottomBoundingRectangle.Location = new Point(width * 60 - 60, player.BottomBoundingRectangle.Y);
             }
 
             else
             {
                 // block immediately to the right, at head height
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40 + 1], 0, gameTime);
+                player.testCollisions(tiles[player.TopBoundingRectangle.Right / 60][player.TopBoundingRectangle.Top / 40], 0, gameTime);
+                player.testCollisions(tiles[player.BottomBoundingRectangle.Right / 60][player.BottomBoundingRectangle.Bottom / 40 - 1], 0, gameTime);
             }
 
-            if (player.BoundingRectangle.Bottom >= height * 40)
+            if (player.BottomBoundingRectangle.Bottom >= height * 40)
             {
                 // player has fell to their death. Respawn
                 player.resetRectangle(spawn);
@@ -170,18 +175,34 @@ namespace Vatadoom
             else
             {
                 // block below the player
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BottomBoundingRectangle.Center.X / 60][player.BottomBoundingRectangle.Bottom / 40], 3, gameTime);
+                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
-            if (player.BoundingRectangle.Top <= 0)
+            if (player.TopBoundingRectangle.Top <= 0)
             {
                 // block vertical movement off the game screen
-                player.BoundingRectangle.Location = new Point(player.BoundingRectangle.X, 0);
+                player.TopBoundingRectangle.Location = new Point(player.TopBoundingRectangle.X, 0);
+                player.BottomBoundingRectangle.Location = new Point(player.BottomBoundingRectangle.X, 40);
             }
             else
             {
                 // block immediately above the player
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
+                player.testCollisions(tiles[player.TopBoundingRectangle.Center.X / 60][player.TopBoundingRectangle.Top / 40], 2, gameTime);
+            }
+
+            if (vehicle != null)
+            {
+                vehicle.Update(gameTime);
+                vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40], 1, gameTime);
+                vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Right / 60][vehicle.BoundingRectangle.Center.Y / 40], 0, gameTime);
+                if (vehicle.BoundingRectangle.Bottom >= height * 40)
+                {
+                    player.resetRectangle(spawn);
+                    vehicle.resetRectangle(vehicleSpawn);
+                }
+                else
+                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Center.X / 60][vehicle.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
             base.Update(gameTime);
@@ -214,6 +235,8 @@ namespace Vatadoom
                         tiles[i][j].Draw(spriteBatch);
 
             player.Draw(spriteBatch);
+            if (vehicle != null)
+                vehicle.Draw(spriteBatch, gameTime);
             spriteBatch.End();
 
             spriteBatch.Begin();
@@ -261,6 +284,8 @@ namespace Vatadoom
                     case 'V':
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
                         waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Point(x, y)));
+                        vehicle = new Vehicle(Game, player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40));
+                        vehicleSpawn = new Point(x, y);
                         break;
                     case '.':
                         // air
@@ -300,6 +325,9 @@ namespace Vatadoom
                         break;
                     case '|':
                         tiles[x][y] = new Tile(textures["ladder"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder);
+                        break;
+                    case 'l':
+                        tiles[x][y] = new Tile(textures["powerline"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Powerline);
                         break;
                     case '\n':
                         // newline or EOF, reset the x value and increment the y value
@@ -348,14 +376,14 @@ namespace Vatadoom
             float cameraHMovement = 0.0f;
             float cameraVMovement = 0.0f;
 
-            if (player.BoundingRectangle.X < marginLeft)
-                cameraHMovement = player.BoundingRectangle.X - marginLeft;
-            else if (player.BoundingRectangle.X > marginRight)
-                cameraHMovement = player.BoundingRectangle.X - marginRight;
-            if (player.BoundingRectangle.Y < marginTop)
-                cameraVMovement = player.BoundingRectangle.Y - marginTop;
-            else if (player.BoundingRectangle.Y > marginBottom)
-                cameraVMovement = player.BoundingRectangle.Y - marginBottom;
+            if (player.TopBoundingRectangle.X < marginLeft)
+                cameraHMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).X - marginLeft;
+            else if (player.TopBoundingRectangle.X > marginRight)
+                cameraHMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).X - marginRight;
+            if (player.TopBoundingRectangle.Y < marginTop)
+                cameraVMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).Y - marginTop;
+            else if (player.BottomBoundingRectangle.Y > marginBottom)
+                cameraVMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).Y - marginBottom;
 
             // Update the camera position, but prevent scrolling off the ends of the level.
             float maxCameraWidthPosition = 60.0f * width - viewport.Width;
@@ -381,7 +409,7 @@ namespace Vatadoom
             }
             else if (w.Type == Waypoint.WaypointType.EndLevel)
             {
-                if (w.TileCoords.X == player.BoundingRectangle.Right / 60 && w.TileCoords.Y == player.BoundingRectangle.Top / 40 + 1)
+                if (w.TileCoords.X == player.TopBoundingRectangle.Right / 60 && w.TileCoords.Y == player.TopBoundingRectangle.Top / 40 + 1)
                     nextLevel();
             }
         }
