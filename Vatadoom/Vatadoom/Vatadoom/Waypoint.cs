@@ -23,6 +23,7 @@ namespace Vatadoom
             Jeep,
             Minecart,
             Rocket,
+            Lift,
             EndRide,
         };
 

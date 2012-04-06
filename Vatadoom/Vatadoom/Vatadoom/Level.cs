@@ -23,7 +23,7 @@ namespace Vatadoom
         private Dictionary<String, Texture2D> textures;
         private Player player;
         private Point spawn; // represents map grid coordinates, for use with save points
-        private int levelx = 0;
+        private int levelx;
         private int width;
         private int height;
         private Random r;
@@ -39,7 +39,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 4;
+            levelx = 2;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -112,8 +112,7 @@ namespace Vatadoom
                 default: // case 5 and above
                     // boss level
                     textures.Add("powerline",Game.Content.Load<Texture2D>("Tiles/powerline"));
-                    textures.Add("spinner", Game.Content.Load<Texture2D>("Tiles/spinner"));
-                    textures.Add("bandit", Game.Content.Load<Texture2D>("Tiles/bandit"));
+                    //textures.Add("bandit", Game.Content.Load<Texture2D>("Bosses/bandit"));
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     break;
             }
@@ -191,18 +190,28 @@ namespace Vatadoom
                 player.testCollisions(tiles[player.TopBoundingRectangle.Center.X / 60][player.TopBoundingRectangle.Top / 40], 2, gameTime);
             }
 
+            // detect internal collisions. Used for waypoints
+            player.testCollisions(tiles[player.TopBoundingRectangle.Center.X / 60][player.TopBoundingRectangle.Center.Y / 40], 4, gameTime);
+            player.testCollisions(tiles[player.BottomBoundingRectangle.Center.X / 60][player.BottomBoundingRectangle.Center.Y / 40], 4, gameTime);
+
             if (vehicle != null)
             {
                 vehicle.Update(gameTime);
-                vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40], 1, gameTime);
-                vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Right / 60][vehicle.BoundingRectangle.Center.Y / 40], 0, gameTime);
+                if (vehicle.Type != Vehicle.VehicleType.Lift)
+                {
+                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40], 1, gameTime);
+                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Right / 60][vehicle.BoundingRectangle.Center.Y / 40], 0, gameTime);
+                }
                 if (vehicle.BoundingRectangle.Bottom >= height * 40)
                 {
                     player.resetRectangle(spawn);
                     vehicle.resetRectangle(vehicleSpawn);
                 }
                 else
-                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Center.X / 60][vehicle.BoundingRectangle.Bottom / 40], 3, gameTime);
+                {
+                    if (vehicle.Type != Vehicle.VehicleType.Lift)
+                        vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Center.X / 60][vehicle.BoundingRectangle.Bottom / 40], 3, gameTime);
+                }
             }
 
             base.Update(gameTime);
@@ -257,6 +266,7 @@ namespace Vatadoom
             bool swap = true;
             int x = 0;
             int y = 0;
+            player = new Player(Game, new Vector2(x * 60, y * 40), this);
             while (!reader.EndOfStream)
             {
                 switch (currentTile)
@@ -268,7 +278,7 @@ namespace Vatadoom
                     case 'p':
                         // player tile. Spawn the player here
                         tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Player);
-                        player = new Player(Game, new Vector2(x * 60, y * 40), this);
+                        
                         spawn = new Point(x, y);
                         break;
                     case 'P':
@@ -284,7 +294,7 @@ namespace Vatadoom
                     case 'V':
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
                         waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Point(x, y)));
-                        vehicle = new Vehicle(Game, player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40));
+                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40));
                         vehicleSpawn = new Point(x, y);
                         break;
                     case '.':
@@ -329,6 +339,12 @@ namespace Vatadoom
                     case 'l':
                         tiles[x][y] = new Tile(textures["powerline"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Powerline);
                         break;
+                    case 'L':
+                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
+                        waypoints.Add("lift", new Waypoint(Waypoint.WaypointType.Lift, player, new Point(x, y)));
+                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Lift, new Vector2(x * 60, (y + 1) * 40));
+                        vehicleSpawn = new Point(x, y);
+                        break;
                     case '\n':
                         // newline or EOF, reset the x value and increment the y value
                         y++;
@@ -343,6 +359,7 @@ namespace Vatadoom
                 swap = !swap;
                 currentTile = reader.Read();
             }
+            player.resetRectangle(spawn);
         }
 
         /// <summary>
@@ -351,6 +368,7 @@ namespace Vatadoom
         private void nextLevel()
         {
             levelx++;
+            vehicle = null;
             LoadContent();
         }
         
@@ -400,12 +418,15 @@ namespace Vatadoom
         {
             if (w.Type == Waypoint.WaypointType.SavePoint)
             {
-                Point oldSpawn = spawn;
-                Vector2 pos = new Vector2(((float)oldSpawn.X * 60.0f), (float)(oldSpawn.Y * 40.0f));
-                tiles[oldSpawn.X][oldSpawn.Y] = new Tile(pos, Tile.TileType.Air);
-                spawn = w.TileCoords;
-                // overwrite the waypoint with the player tile to set the new spawn point
-                tiles[spawn.X][spawn.Y] = new Tile(new Vector2((float)spawn.X * 60.0f, (float)spawn.Y * 40.0f), Tile.TileType.Player);
+                if (w.TileCoords.X == player.TopBoundingRectangle.Right / 60 && w.TileCoords.Y == player.TopBoundingRectangle.Top / 40 + 1)
+                {
+                    Point oldSpawn = spawn;
+                    Vector2 pos = new Vector2(((float)oldSpawn.X * 60.0f), (float)(oldSpawn.Y * 40.0f));
+                    tiles[oldSpawn.X][oldSpawn.Y] = new Tile(pos, Tile.TileType.Air);
+                    spawn = w.TileCoords;
+                    // overwrite the waypoint with the player tile to set the new spawn point
+                    tiles[spawn.X][spawn.Y] = new Tile(new Vector2((float)spawn.X * 60.0f, (float)spawn.Y * 40.0f), Tile.TileType.Player);
+                }
             }
             else if (w.Type == Waypoint.WaypointType.EndLevel)
             {

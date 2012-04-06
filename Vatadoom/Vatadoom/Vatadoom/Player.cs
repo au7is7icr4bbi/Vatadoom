@@ -221,8 +221,8 @@ namespace Vatadoom
                     // akin to landing on top of a platform block. No other collisions need to be detected
                     if (side == 3 && !ridingVehicle)
                     {
-                        BottomBoundingRectangle.Offset(0, -(BottomBoundingRectangle.Bottom - tile.BoundingRectangle.Top));
-                        TopBoundingRectangle.Offset(0, -(TopBoundingRectangle.Bottom - tile.BoundingRectangle.Top));
+                        BottomBoundingRectangle.Location = new Point(BottomBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
+                        TopBoundingRectangle.Location = new Point(TopBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
                         Physics.Velocity = jumpSpeed;
                     }
                 }
@@ -238,23 +238,38 @@ namespace Vatadoom
         public void handleEvent(Waypoint w)
         {
             // begin riding vehicle
-
-            if (w.TileCoords.X == BottomBoundingRectangle.Right / 60 && w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1)
+            // begin riding vehicle
+            if (w.Type == Waypoint.WaypointType.Spinner)
             {
-                // begin riding vehicle
-                if (w.Type == Waypoint.WaypointType.Spinner)
+                if (w.TileCoords.X == BottomBoundingRectangle.Right / 60 && w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1)
                 {
                     ridingVehicle = true;
                     TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 80);
                     BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 40);
                 }
+            }
 
-                // end riding vehicle
-                else if (w.Type == Waypoint.WaypointType.EndRide)
+            else if (w.Type == Waypoint.WaypointType.Lift)
+            {
+                if ((w.TileCoords.X == BottomBoundingRectangle.Right / 60 || w.TileCoords.X == BottomBoundingRectangle.Center.X / 60) && (w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1 || w.TileCoords.Y == BottomBoundingRectangle.Top / 40 - 1))
                 {
-                    ridingVehicle = false;
-                    TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 80);
-                    BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 40);
+                    ridingVehicle = true;
+                    TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 - 80);
+                    BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 - 40);
+                }
+            }
+
+            // end riding vehicle
+            else if (w.Type == Waypoint.WaypointType.EndRide)
+            {
+                if ((w.TileCoords.X == BottomBoundingRectangle.Right / 60 || w.TileCoords.X == BottomBoundingRectangle.Center.X / 60) && (w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1 || w.TileCoords.Y == BottomBoundingRectangle.Top / 40 - 1))
+                {
+                    if (ridingVehicle)
+                    {
+                        ridingVehicle = false;
+                        TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40);
+                        BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 + 40);
+                    }
                 }
             }
         }
