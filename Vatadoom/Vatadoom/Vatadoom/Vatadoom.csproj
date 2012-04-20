@@ -107,6 +107,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Boss.cs" />
     <Compile Include="Layer.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="Map.cs" />

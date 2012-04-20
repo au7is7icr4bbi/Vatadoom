@@ -27,7 +27,9 @@ namespace Vatadoom
             Air, // nothingness
             Waypoint, // waypoints for triggering special events
             Powerline,
-            Ladder
+            Ladder,
+            Enemy,
+            Boss
         };
 
         public enum CollisionType

@@ -20,6 +20,7 @@ namespace Vatadoom
     {
         private Layer[] layers;
         private Tile[][] tiles;
+        private Boss boss;
         private Dictionary<String, Texture2D> textures;
         private Player player;
         private Point spawn; // represents map grid coordinates, for use with save points
@@ -39,7 +40,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 2;
+            levelx = 5;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -48,6 +49,7 @@ namespace Vatadoom
             layers[2] = new Layer(Game.Content, "Backgrounds/Layer2", 0.8f);
             waypoints = new Dictionary<String, Waypoint>();
             vehicle = null;
+            boss = null;
         }
 
         public void setSpriteBatch(SpriteBatch spriteBatch)
@@ -89,6 +91,7 @@ namespace Vatadoom
                 case 2:
                     // tower
                     textures.Add("sewerWall", Game.Content.Load<Texture2D>("Tiles/sewerWall"));
+                    textures.Add("sewerInterior", Game.Content.Load<Texture2D>("Tiles/sewerInterior"));
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     textures.Add("buildingInterior", Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
                     textures.Add("concrete", Game.Content.Load<Texture2D>("Tiles/concrete"));
@@ -109,24 +112,32 @@ namespace Vatadoom
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
                     textures.Add("powerline", Game.Content.Load<Texture2D>("Tiles/powerline"));
                     break;
-                default: // case 5 and above
+                case 5: // case 5
                     // boss level
                     textures.Add("powerline",Game.Content.Load<Texture2D>("Tiles/powerline"));
-                    //textures.Add("bandit", Game.Content.Load<Texture2D>("Bosses/bandit"));
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("buildingInterior", Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
+                    textures.Add("buildingPlatform", Game.Content.Load<Texture2D>("Tiles/buildingPlatform"));
+                    break;
+                default:
+                    // end the game
+                    Game.Exit();
                     break;
             }
-            backingTrack = Game.Content.Load<Song>("Music/" + levelx);
-            MediaPlayer.IsRepeating = true;
-            MediaPlayer.Play(backingTrack);
-            StreamReader reader = new StreamReader("Content/Levels/" + levelx + ".txt");
-            width = int.Parse(reader.ReadLine());
-            height = int.Parse(reader.ReadLine());
-            tiles = new Tile[width][];
-            for (int i = 0; i < width; i++)
-                tiles[i] = new Tile[height];
-            loadLevel(reader);
-            base.LoadContent();
+            if (levelx < 6)
+            {
+                backingTrack = Game.Content.Load<Song>("Music/" + levelx);
+                MediaPlayer.IsRepeating = true;
+                MediaPlayer.Play(backingTrack);
+                StreamReader reader = new StreamReader("Content/Levels/" + levelx + ".txt");
+                width = int.Parse(reader.ReadLine());
+                height = int.Parse(reader.ReadLine());
+                tiles = new Tile[width][];
+                for (int i = 0; i < width; i++)
+                    tiles[i] = new Tile[height];
+                loadLevel(reader);
+                base.LoadContent();
+            }
         }
 
         /// <summary>
@@ -214,6 +225,11 @@ namespace Vatadoom
                 }
             }
 
+            if (boss != null && Rectangle.Union(player.BottomBoundingRectangle, player.TopBoundingRectangle).Intersects(boss.BoundingRectangle))
+            {
+                boss.onDefeated();
+            }
+
             base.Update(gameTime);
         }
 
@@ -244,6 +260,8 @@ namespace Vatadoom
                         tiles[i][j].Draw(spriteBatch);
 
             player.Draw(spriteBatch);
+            if (boss != null)
+                boss.Draw(spriteBatch, gameTime);
             if (vehicle != null)
                 vehicle.Draw(spriteBatch, gameTime);
             spriteBatch.End();
@@ -278,7 +296,6 @@ namespace Vatadoom
                     case 'p':
                         // player tile. Spawn the player here
                         tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Player);
-                        
                         spawn = new Point(x, y);
                         break;
                     case 'P':
@@ -324,6 +341,10 @@ namespace Vatadoom
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
                         waypoints.Add("e", new Waypoint(Waypoint.WaypointType.EndLevel, this, new Point(x, y)));
                         break;
+                    case 'E':
+                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Boss);
+                        boss = new Boss(Game, x * 60, y * 40, this);
+                        break;
                     case 'B':
                         tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior);
                         break;
@@ -365,7 +386,7 @@ namespace Vatadoom
         /// <summary>
         /// Load the next level
         /// </summary>
-        private void nextLevel()
+        public void nextLevel()
         {
             levelx++;
             vehicle = null;

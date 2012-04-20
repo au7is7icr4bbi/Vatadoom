@@ -112,7 +112,7 @@ namespace Vatadoom
                 }
                 else
                 {
-                    BoundingRectangle.Offset(0, -(int)physics.staticVerticalMotion(BoundingRectangle.Center, 200.0f, gameTime).Y);
+                    BoundingRectangle.Offset(0, -(int)physics.staticVerticalMotion(BoundingRectangle.Center, 100.0f, gameTime).Y);
                     player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Left + 120, BoundingRectangle.Top - 40);
                     player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Left + 120, player.BottomBoundingRectangle.Top - 40);
                 }
