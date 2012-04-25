@@ -29,6 +29,8 @@ namespace Vatadoom
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            this.IsFixedTimeStep = true;
+            Console.WriteLine(this.TargetElapsedTime.TotalMilliseconds);
         }
 
         /// <summary>

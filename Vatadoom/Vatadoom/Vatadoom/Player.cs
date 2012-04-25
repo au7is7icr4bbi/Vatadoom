@@ -14,8 +14,7 @@ namespace Vatadoom
 {
     class Player : WaypointHandler
     {
-        public Rectangle TopBoundingRectangle;
-        public Rectangle BottomBoundingRectangle;
+        public Rectangle BoundingRectangle;
         private Texture2D texture;
         public Physics Physics;
         private Level currentLevel;
@@ -27,8 +26,7 @@ namespace Vatadoom
         public Player(Game game, Vector2 pos, Level level)
         {
             texture = game.Content.Load<Texture2D>("Player/player");
-            TopBoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 40);
-            BottomBoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y + 40, 60, 40);
+            BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 80);
             Physics = new Physics();
             Physics.Velocity = jumpSpeed;
             currentLevel = level;
@@ -40,8 +38,7 @@ namespace Vatadoom
         /// <param name="spawn">Point specifying spawn position in level grid</param>
         public void resetRectangle(Point spawn)
         {
-            TopBoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40);
-            BottomBoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40 + 40);
+            BoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40);
             Physics.Velocity = jumpSpeed;
             canClimb = false;
             climbing = false;
@@ -56,15 +53,13 @@ namespace Vatadoom
                 // move right
                 if (Keyboard.GetState().IsKeyDown(Keys.D))
                 {
-                    TopBoundingRectangle.Offset((int)Physics.horizontalMotion(TopBoundingRectangle.Center, moveSpeed, gameTime).X, 0);
-                    BottomBoundingRectangle.Offset((int)Physics.horizontalMotion(BottomBoundingRectangle.Center, moveSpeed, gameTime).X, 0);
+                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, moveSpeed, gameTime).X, 0);
                 }
 
                 // move left
                 if (Keyboard.GetState().IsKeyDown(Keys.A))
                 {
-                    TopBoundingRectangle.Offset((int)Physics.horizontalMotion(TopBoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
-                    BottomBoundingRectangle.Offset((int)Physics.horizontalMotion(BottomBoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
+                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
                 }
 
                 if (Keyboard.GetState().IsKeyDown(Keys.W))
@@ -72,8 +67,7 @@ namespace Vatadoom
                     if (canClimb)
                     {
                         climbing = true;
-                        TopBoundingRectangle.Offset(0, -(int)Physics.staticVerticalMotion(TopBoundingRectangle.Center, moveSpeed, gameTime).Y);
-                        BottomBoundingRectangle.Offset(0, -(int)Physics.staticVerticalMotion(BottomBoundingRectangle.Center, moveSpeed, gameTime).Y);
+                        BoundingRectangle.Offset(0, -(int)Physics.staticVerticalMotion(BoundingRectangle.Center, moveSpeed, gameTime).Y);
                     }
                 }
 
@@ -85,8 +79,7 @@ namespace Vatadoom
                 // jump under the effects of gravity
                 if (Keyboard.GetState().IsKeyDown(Keys.Space))
                 {
-                    TopBoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(TopBoundingRectangle.Center, Physics.Velocity, gameTime).Y));
-                    BottomBoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BottomBoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                    BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
                 }
 
                 // simulate gravity
@@ -96,8 +89,7 @@ namespace Vatadoom
                     {
                         if (Physics.Velocity > 0.0f)
                             Physics.Velocity = 0.0f;
-                        TopBoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(TopBoundingRectangle.Center, Physics.Velocity, gameTime).Y));
-                        BottomBoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BottomBoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                        BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
                     }
                 }
             }
@@ -105,7 +97,7 @@ namespace Vatadoom
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, Rectangle.Union(TopBoundingRectangle, BottomBoundingRectangle), Color.White);
+            spriteBatch.Draw(texture, BoundingRectangle, Color.White);
         }
 
         /// <summary>
@@ -116,7 +108,7 @@ namespace Vatadoom
         /// <param name="gameTime">The current game time. Used for arresting motion, or for calculating gravitational effects when the player is not colliding with a block below them</param>
         public void testCollisions(Tile tile, int side, GameTime gameTime)
         {
-            if (TopBoundingRectangle.Intersects(tile.BoundingRectangle))
+            if (BoundingRectangle.Intersects(tile.BoundingRectangle))
             {
                 // collision detected, process it
                 if (tile.collisionType == Tile.CollisionType.Solid)
@@ -142,97 +134,44 @@ namespace Vatadoom
                         // colliding with a block to your right
                         if (side == 0)
                         {
-                            TopBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, TopBoundingRectangle.Location.Y);
-                            BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BottomBoundingRectangle.Location.Y);
+                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BoundingRectangle.Location.Y);
                         }
 
                         // colliding with a block to your left
                         if (side == 1)
                         {
-                            TopBoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, TopBoundingRectangle.Location.Y);
-                            BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BottomBoundingRectangle.Location.Y);
+                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BoundingRectangle.Location.Y);
                         }
 
                         // hitting a solid block from beneath, so block movement
                         if (side == 2)
                         {
-                            TopBoundingRectangle.Location = new Point(TopBoundingRectangle.Location.X, tile.BoundingRectangle.Bottom);
-                            BottomBoundingRectangle.Location = new Point(BottomBoundingRectangle.Location.X, tile.BoundingRectangle.Bottom - 40);
+                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Bottom);
                             if (Physics.Velocity > 0.0f)
                                 Physics.Velocity = 0.0f;
                         }
-                    }
-                }
-                // otherwise, the block is passable, so do not test any collisions for it
-                else
-                {
-                    climbing = false;
-                    canClimb = false;
-                }
 
-            }
-
-            if (BottomBoundingRectangle.Intersects(tile.BoundingRectangle))
-            {
-                // collision detected, process it
-                if (tile.collisionType == Tile.CollisionType.Solid)
-                {
-                    if (tile.tileType == Tile.TileType.Waypoint)
-                    {
-                        for (int i = 0; i < currentLevel.waypoints.Count; i++)
-                            currentLevel.waypoints.ElementAt(i).Value.handleEvent();
-                    }
-
-                    else if (tile.tileType == Tile.TileType.Ladder)
-                    {
-                        canClimb = true;
-                    }
-                    // else if (tile.tileType == Tile.TileType.Bullet)
-                    // damage the player
-
-                    else
-                    {
-                        if (canClimb)
-                            canClimb = !canClimb;
-                        // block movement through the block
-                        // colliding with a block to your right
-                        if (side == 0)
-                        {
-                            BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BottomBoundingRectangle.Location.Y);
-                            TopBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, TopBoundingRectangle.Location.Y);
-                        }
-                        // colliding with a block to your left
-                        if (side == 1)
-                        {
-                            BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BottomBoundingRectangle.Location.Y);
-                            TopBoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, TopBoundingRectangle.Location.Y);
-                        }
-                        // akin to landing on top of a solid block or platform
                         if (side == 3 && !ridingVehicle)
                         {
-                            BottomBoundingRectangle.Location = new Point(BottomBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                            TopBoundingRectangle.Location = new Point(TopBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
+                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
                             Physics.Velocity = jumpSpeed;
                         }
                     }
                 }
+                // otherwise, the block is passable, so do not test any collisions for it
                 else if (tile.collisionType == Tile.CollisionType.Platform)
                 {
-                    // akin to landing on top of a platform block. No other collisions need to be detected
                     if (side == 3 && !ridingVehicle)
                     {
-                        BottomBoundingRectangle.Location = new Point(BottomBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                        TopBoundingRectangle.Location = new Point(TopBoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
+                        BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
                         Physics.Velocity = jumpSpeed;
                     }
                 }
-                // otherwise, the block is passable, so do not test any collisions for it
                 else
                 {
                     climbing = false;
                     canClimb = false;
                 }
-
             }
         }
         public void handleEvent(Waypoint w)
@@ -241,35 +180,19 @@ namespace Vatadoom
             // begin riding vehicle
             if (w.Type == Waypoint.WaypointType.Spinner)
             {
-                if (w.TileCoords.X == BottomBoundingRectangle.Right / 60 && w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1)
+                if (BoundingRectangle.Intersects(w.BoundingRectangle))
                 {
                     ridingVehicle = true;
-                    TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 80);
-                    BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60 - 60, w.TileCoords.Y * 40 - 40);
+                    BoundingRectangle.Location = new Point(w.BoundingRectangle.X, w.BoundingRectangle.Y - 80);
                 }
             }
 
             else if (w.Type == Waypoint.WaypointType.Lift)
             {
-                if ((w.TileCoords.X == BottomBoundingRectangle.Right / 60 || w.TileCoords.X == BottomBoundingRectangle.Center.X / 60) && (w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1 || w.TileCoords.Y == BottomBoundingRectangle.Top / 40 - 1))
+                if (BoundingRectangle.Intersects(w.BoundingRectangle))
                 {
                     ridingVehicle = true;
-                    TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 - 80);
-                    BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 - 40);
-                }
-            }
-
-            // end riding vehicle
-            else if (w.Type == Waypoint.WaypointType.EndRide)
-            {
-                if ((w.TileCoords.X == BottomBoundingRectangle.Right / 60 || w.TileCoords.X == BottomBoundingRectangle.Center.X / 60) && (w.TileCoords.Y == BottomBoundingRectangle.Bottom / 40 - 1 || w.TileCoords.Y == BottomBoundingRectangle.Top / 40 - 1))
-                {
-                    if (ridingVehicle)
-                    {
-                        ridingVehicle = false;
-                        TopBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40);
-                        BottomBoundingRectangle.Location = new Point(w.TileCoords.X * 60, w.TileCoords.Y * 40 + 40);
-                    }
+                    BoundingRectangle.Location = new Point(BoundingRectangle.X, w.BoundingRectangle.Y - 80);
                 }
             }
         }

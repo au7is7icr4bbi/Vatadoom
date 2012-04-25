@@ -40,7 +40,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 5;
+            levelx = 4;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -147,36 +147,33 @@ namespace Vatadoom
         public override void Update(GameTime gameTime)
         {
             player.Update(gameTime);
-    
 
             // block movement off the screen
-            if (player.TopBoundingRectangle.Left <= 0)
+            if (player.BoundingRectangle.Left <= 0)
             {
-                player.TopBoundingRectangle.Location = new Point(0, player.TopBoundingRectangle.Location.Y);
-                player.BottomBoundingRectangle.Location = new Point(0, player.BottomBoundingRectangle.Location.Y);
+                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
             }
 
             else
             {
                 // block immediately to the left
-                player.testCollisions(tiles[player.TopBoundingRectangle.Left / 60][player.BottomBoundingRectangle.Center.Y / 40], 1, gameTime);
-                player.testCollisions(tiles[player.BottomBoundingRectangle.Left / 60][player.BottomBoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40], 1, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
             }
 
-            if (player.TopBoundingRectangle.Right >= width * 60)
+            if (player.BoundingRectangle.Right >= width * 60)
             {
-                player.TopBoundingRectangle.Location = new Point(width * 60 - 60, player.TopBoundingRectangle.Y);
-                player.BottomBoundingRectangle.Location = new Point(width * 60 - 60, player.BottomBoundingRectangle.Y);
+                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
             }
 
             else
             {
                 // block immediately to the right, at head height
-                player.testCollisions(tiles[player.TopBoundingRectangle.Right / 60][player.TopBoundingRectangle.Top / 40], 0, gameTime);
-                player.testCollisions(tiles[player.BottomBoundingRectangle.Right / 60][player.BottomBoundingRectangle.Bottom / 40 - 1], 0, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Bottom / 40 - 1], 0, gameTime);
             }
 
-            if (player.BottomBoundingRectangle.Bottom >= height * 40)
+            if (player.BoundingRectangle.Bottom >= height * 40)
             {
                 // player has fell to their death. Respawn
                 player.resetRectangle(spawn);
@@ -185,25 +182,27 @@ namespace Vatadoom
             else
             {
                 // block below the player
-                player.testCollisions(tiles[player.BottomBoundingRectangle.Center.X / 60][player.BottomBoundingRectangle.Bottom / 40], 3, gameTime);
-                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 - 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 + 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
-            if (player.TopBoundingRectangle.Top <= 0)
+            if (player.BoundingRectangle.Top <= 0)
             {
                 // block vertical movement off the game screen
-                player.TopBoundingRectangle.Location = new Point(player.TopBoundingRectangle.X, 0);
-                player.BottomBoundingRectangle.Location = new Point(player.BottomBoundingRectangle.X, 40);
+                player.BoundingRectangle.Location = new Point(player.BoundingRectangle.Location.X, 0);
             }
             else
             {
                 // block immediately above the player
-                player.testCollisions(tiles[player.TopBoundingRectangle.Center.X / 60][player.TopBoundingRectangle.Top / 40], 2, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 - 1][player.BoundingRectangle.Top / 40], 2, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 + 1][player.BoundingRectangle.Top / 40], 2, gameTime);
             }
 
             // detect internal collisions. Used for waypoints
-            player.testCollisions(tiles[player.TopBoundingRectangle.Center.X / 60][player.TopBoundingRectangle.Center.Y / 40], 4, gameTime);
-            player.testCollisions(tiles[player.BottomBoundingRectangle.Center.X / 60][player.BottomBoundingRectangle.Center.Y / 40], 4, gameTime);
+            player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Center.Y / 40 - 1], 4, gameTime);
+            player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Center.Y / 40], 4, gameTime);
 
             if (vehicle != null)
             {
@@ -212,6 +211,10 @@ namespace Vatadoom
                 {
                     vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40], 1, gameTime);
                     vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Right / 60][vehicle.BoundingRectangle.Center.Y / 40], 0, gameTime);
+                }
+                else
+                {
+                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40 - 1], 4, gameTime);
                 }
                 if (vehicle.BoundingRectangle.Bottom >= height * 40)
                 {
@@ -225,7 +228,7 @@ namespace Vatadoom
                 }
             }
 
-            if (boss != null && Rectangle.Union(player.BottomBoundingRectangle, player.TopBoundingRectangle).Intersects(boss.BoundingRectangle))
+            if (boss != null && player.BoundingRectangle.Intersects(boss.BoundingRectangle))
             {
                 boss.onDefeated();
             }
@@ -311,7 +314,7 @@ namespace Vatadoom
                     case 'V':
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
                         waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Point(x, y)));
-                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40));
+                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40), this);
                         vehicleSpawn = new Point(x, y);
                         break;
                     case '.':
@@ -328,7 +331,7 @@ namespace Vatadoom
                         break;
                     case 'X':
                         tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
-                        waypoints.Add("X", new Waypoint(Waypoint.WaypointType.EndRide, player, new Point(x, y)));
+                        waypoints.Add("X", new Waypoint(Waypoint.WaypointType.EndRide, vehicle, new Point(x, y)));
                         break;
                     case 'c':
                         tiles[x][y] = new Tile(textures["concrete"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
@@ -362,8 +365,10 @@ namespace Vatadoom
                         break;
                     case 'L':
                         tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
+                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Lift, new Vector2(x * 60, (y + 1) * 40), this);
                         waypoints.Add("lift", new Waypoint(Waypoint.WaypointType.Lift, player, new Point(x, y)));
-                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Lift, new Vector2(x * 60, (y + 1) * 40));
+                        if (waypoints["X"] != null)
+                            waypoints["X"].handler = vehicle;
                         vehicleSpawn = new Point(x, y);
                         break;
                     case '\n':
@@ -415,14 +420,14 @@ namespace Vatadoom
             float cameraHMovement = 0.0f;
             float cameraVMovement = 0.0f;
 
-            if (player.TopBoundingRectangle.X < marginLeft)
-                cameraHMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).X - marginLeft;
-            else if (player.TopBoundingRectangle.X > marginRight)
-                cameraHMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).X - marginRight;
-            if (player.TopBoundingRectangle.Y < marginTop)
-                cameraVMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).Y - marginTop;
-            else if (player.BottomBoundingRectangle.Y > marginBottom)
-                cameraVMovement = Rectangle.Union(player.TopBoundingRectangle, player.BottomBoundingRectangle).Y - marginBottom;
+            if (player.BoundingRectangle.X < marginLeft)
+                cameraHMovement = player.BoundingRectangle.X - marginLeft;
+            else if (player.BoundingRectangle.X > marginRight)
+                cameraHMovement = player.BoundingRectangle.X - marginRight;
+            if (player.BoundingRectangle.Y < marginTop)
+                cameraVMovement = player.BoundingRectangle.Y - marginTop;
+            else if (player.BoundingRectangle.Y > marginBottom)
+                cameraVMovement = player.BoundingRectangle.Y - marginBottom;
 
             // Update the camera position, but prevent scrolling off the ends of the level.
             float maxCameraWidthPosition = 60.0f * width - viewport.Width;
@@ -439,7 +444,7 @@ namespace Vatadoom
         {
             if (w.Type == Waypoint.WaypointType.SavePoint)
             {
-                if (w.TileCoords.X == player.TopBoundingRectangle.Right / 60 && w.TileCoords.Y == player.TopBoundingRectangle.Top / 40 + 1)
+                if (player.BoundingRectangle.Intersects(w.BoundingRectangle))
                 {
                     Point oldSpawn = spawn;
                     Vector2 pos = new Vector2(((float)oldSpawn.X * 60.0f), (float)(oldSpawn.Y * 40.0f));
@@ -451,7 +456,7 @@ namespace Vatadoom
             }
             else if (w.Type == Waypoint.WaypointType.EndLevel)
             {
-                if (w.TileCoords.X == player.TopBoundingRectangle.Right / 60 && w.TileCoords.Y == player.TopBoundingRectangle.Top / 40 + 1)
+                if (player.BoundingRectangle.Intersects(w.BoundingRectangle))
                     nextLevel();
             }
         }

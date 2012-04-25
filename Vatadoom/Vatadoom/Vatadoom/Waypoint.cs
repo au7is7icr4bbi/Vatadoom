@@ -27,7 +27,7 @@ namespace Vatadoom
             EndRide,
         };
 
-        private WaypointHandler handler;
+        public WaypointHandler handler;
         public Rectangle BoundingRectangle { get; set; }
         public Point TileCoords { get; set; }
         public WaypointType Type { get; private set; }
@@ -37,6 +37,10 @@ namespace Vatadoom
             Type = type;
             handler = h;
             TileCoords = tileCoords;
+            if (type == WaypointType.Lift)
+                BoundingRectangle = new Rectangle(tileCoords.X * 60, tileCoords.Y * 40, 300, 40);
+            else
+                BoundingRectangle = new Rectangle(tileCoords.X * 60, tileCoords.Y * 40, 60, 40);
         }
 
         public void handleEvent()

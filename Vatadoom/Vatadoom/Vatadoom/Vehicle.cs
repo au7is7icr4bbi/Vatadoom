@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Vatadoom
 {
-    class Vehicle
+    class Vehicle : WaypointHandler
     {
         public enum VehicleType
         {
@@ -28,8 +28,9 @@ namespace Vatadoom
         private Game g;
         private Texture2D texture;
         private Physics physics;
+        private Level level;
 
-        public Vehicle(Game game, ref Player p, VehicleType type, Vector2 pos)
+        public Vehicle(Game game, ref Player p, VehicleType type, Vector2 pos, Level curr)
         {
             g = game;
             player = p;
@@ -58,7 +59,8 @@ namespace Vatadoom
             if (Type != VehicleType.Lift)
                 BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 40);
             else
-                BoundingRectangle = new Rectangle((int)pos.X - 120, (int)pos.Y, 300, 40);
+                BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y - 40, 300, 40);
+            level = curr;
         }
 
         public void resetRectangle(Point spawn)
@@ -74,8 +76,7 @@ namespace Vatadoom
                 if (Keyboard.GetState().IsKeyDown(Keys.Space) && Type != VehicleType.Lift)
                 {
                     BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
-                    player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Top - 40);
-                    player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Left, player.BottomBoundingRectangle.Top - 40);
+                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Bottom - 80);
                 }
 
                 if (Keyboard.GetState().IsKeyUp(Keys.Space) && Type != VehicleType.Lift)
@@ -85,36 +86,31 @@ namespace Vatadoom
                         physics.Velocity = 0.0f;
                     }
                     BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
-                    player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Top - 40);
-                    player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Left, player.BottomBoundingRectangle.Top - 40);
+                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Top - 40);
                 }
 
                 // move right
                 if (Keyboard.GetState().IsKeyDown(Keys.D) && Type == VehicleType.Lift)
                 {
-                    player.TopBoundingRectangle.Offset((int)physics.horizontalMotion(player.TopBoundingRectangle.Center, 200.0f, gameTime).X, 0);
-                    player.BottomBoundingRectangle.Offset((int)physics.horizontalMotion(player.BottomBoundingRectangle.Center, 200.0f, gameTime).X, 0);
+                    player.BoundingRectangle.Offset((int)physics.horizontalMotion(player.BoundingRectangle.Center, 200.0f, gameTime).X, 0);
                 }
 
                 // move left
                 if (Keyboard.GetState().IsKeyDown(Keys.A) && Type == VehicleType.Lift)
                 {
-                    player.TopBoundingRectangle.Offset((int)physics.horizontalMotion(player.TopBoundingRectangle.Center, -200.0f, gameTime).X, 0);
-                    player.BottomBoundingRectangle.Offset((int)physics.horizontalMotion(player.BottomBoundingRectangle.Center, -200.0f, gameTime).X, 0);
+                    player.BoundingRectangle.Offset((int)physics.horizontalMotion(player.BoundingRectangle.Center, -200.0f, gameTime).X, 0);
                 }
                 
                 // vehicle will always move left to right, so horizontal motion is always positive
                 if (Type != Vehicle.VehicleType.Lift)
                 {
                     BoundingRectangle.Offset((int)physics.horizontalMotion(BoundingRectangle.Center, 200.0f, gameTime).X, 0);
-                    player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Top - 40);
-                    player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Left, player.BottomBoundingRectangle.Top - 40);
+                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, player.BoundingRectangle.Top - 40);
                 }
                 else
                 {
                     BoundingRectangle.Offset(0, -(int)physics.staticVerticalMotion(BoundingRectangle.Center, 100.0f, gameTime).Y);
-                    player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Left + 120, BoundingRectangle.Top - 40);
-                    player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Left + 120, player.BottomBoundingRectangle.Top - 40);
+                    player.BoundingRectangle.Location = new Point(player.BoundingRectangle.Left, BoundingRectangle.Top - 80);
                 }
             }
         }
@@ -131,6 +127,13 @@ namespace Vatadoom
                 if (BoundingRectangle.Intersects(tile.BoundingRectangle))
                 {
                     // collision detected, process it
+                    if (tile.tileType == Tile.TileType.Waypoint)
+                    {
+                        for(int i = 0; i < level.waypoints.Values.Count; i++)
+                        {
+                            level.waypoints.ElementAt(i).Value.handleEvent();
+                        }
+                    }
                     if (tile.collisionType == Tile.CollisionType.Solid)
                     {
                         // if (tile.tileType == Tile.TileType.Bullet)
@@ -140,8 +143,7 @@ namespace Vatadoom
                         if (side == 0)
                         {
                             BoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BoundingRectangle.Location.Y);
-                            player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 40);
-                            player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, player.BottomBoundingRectangle.Top - 40);
+                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
                             //BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BottomBoundingRectangle.Location.Y);
                         }
 
@@ -149,16 +151,13 @@ namespace Vatadoom
                         if (side == 1)
                         {
                             BoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BoundingRectangle.Location.Y);
-                            player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 40);
-                            player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, player.BottomBoundingRectangle.Top - 40);
-                            //BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BottomBoundingRectangle.Location.Y);
+                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
                         }
 
                         if (side == 3)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                            player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 40);
-                            player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, player.BottomBoundingRectangle.Top - 40);
+                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
                             physics.Velocity = 200.0f;
                         }
                     }
@@ -167,9 +166,29 @@ namespace Vatadoom
                         if (side == 3)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                            player.BottomBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 40);
-                            player.TopBoundingRectangle.Location = new Point(BoundingRectangle.Location.X, player.BottomBoundingRectangle.Top - 40);
+                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
                             physics.Velocity = 200.0f;
+                        }
+                    }
+                }
+            }
+        }
+        public void handleEvent(Waypoint w)
+        {
+            if (w.Type == Waypoint.WaypointType.EndRide)
+            {
+                if (BoundingRectangle.Intersects(w.BoundingRectangle))
+                {
+                    if (player.ridingVehicle)
+                    {
+                        if (this.Type == VehicleType.Lift)
+                        {
+                            player.ridingVehicle = false;
+                        }
+                        else
+                        {
+                            player.ridingVehicle = false;
+                            player.BoundingRectangle.Location = new Point(w.TileCoords.X * 60 + 1, w.TileCoords.Y * 40 - 40);
                         }
                     }
                 }
