@@ -20,6 +20,7 @@ namespace Vatadoom
     {
         private Layer[] layers;
         private Tile[][] tiles;
+        // private TileLayer[] tileLayers;
         private Boss boss;
         private Dictionary<String, Texture2D> textures;
         private Player player;
@@ -50,6 +51,8 @@ namespace Vatadoom
             waypoints = new Dictionary<String, Waypoint>();
             vehicle = null;
             boss = null;
+            // tileLayers = new TileLayer[3];
+            // tileLayers.load(levelx);
         }
 
         public void setSpriteBatch(SpriteBatch spriteBatch)
