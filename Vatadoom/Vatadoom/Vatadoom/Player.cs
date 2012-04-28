@@ -26,7 +26,7 @@ namespace Vatadoom
         public Player(Game game, Vector2 pos, Level level)
         {
             texture = game.Content.Load<Texture2D>("Player/player");
-            BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 80);
+            BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, texture.Width, texture.Height);
             Physics = new Physics();
             Physics.Velocity = jumpSpeed;
             currentLevel = level;
@@ -138,20 +138,20 @@ namespace Vatadoom
                         }
 
                         // colliding with a block to your left
-                        if (side == 1)
+                        else if (side == 1)
                         {
                             BoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BoundingRectangle.Location.Y);
                         }
 
                         // hitting a solid block from beneath, so block movement
-                        if (side == 2)
+                        else if (side == 2)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Bottom);
                             if (Physics.Velocity > 0.0f)
                                 Physics.Velocity = 0.0f;
                         }
 
-                        if (side == 3 && !ridingVehicle)
+                        else if (side == 3 && !ridingVehicle)
                         {
                             BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
                             Physics.Velocity = jumpSpeed;

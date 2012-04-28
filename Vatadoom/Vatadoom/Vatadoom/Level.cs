@@ -41,7 +41,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 4;
+            levelx = 0;
             this.spriteBatch = spriteBatch;
             r = new Random();
             layers = new Layer[3];
@@ -151,42 +151,17 @@ namespace Vatadoom
         {
             player.Update(gameTime);
 
-            // block movement off the screen
-            if (player.BoundingRectangle.Left <= 0)
-            {
-                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
-            }
-
-            else
-            {
-                // block immediately to the left
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40], 1, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Center.Y / 40 - 1], 1, gameTime);
-            }
-
-            if (player.BoundingRectangle.Right >= width * 60)
-            {
-                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
-            }
-
-            else
-            {
-                // block immediately to the right, at head height
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Bottom / 40 - 1], 0, gameTime);
-            }
-
             if (player.BoundingRectangle.Bottom >= height * 40)
             {
                 // player has fell to their death. Respawn
                 player.resetRectangle(spawn);
             }
-            
+
             else
             {
                 // block below the player
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
                 player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 - 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
                 player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 + 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
             }
 
@@ -198,9 +173,36 @@ namespace Vatadoom
             else
             {
                 // block immediately above the player
+                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
                 player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 - 1][player.BoundingRectangle.Top / 40], 2, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 + 1][player.BoundingRectangle.Top / 40], 2, gameTime);
+                //player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40 + 1], 2, gameTime);
+            }
+
+            // block movement off the screen
+            if (player.BoundingRectangle.Left <= 0)
+            {
+                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
+            }
+
+            else
+            {
+                // block immediately to the left
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40], 1, gameTime); // leg height
+                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40 - 1], 1, gameTime); // leg height
+                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40 - 1], 1, gameTime); // head height
+                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 1, gameTime); // head height
+            }
+
+            if (player.BoundingRectangle.Right >= width * 60)
+            {
+                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
+            }
+
+            else
+            {
+                // block immediately to the right, at head height
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime); // leg height
+                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Bottom / 40 - 1], 0, gameTime); // head height
             }
 
             // detect internal collisions. Used for waypoints

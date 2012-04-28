@@ -8,8 +8,8 @@
 ..............................................................................ccc.
 ............cccc.......................................s......................ccc.
 c.......c..........................xxxxxxxxxxxxxxxxxxxxxx.....................ccc.
-c.p.....c..........................cccccccccccccccccccccc.xxxxxxxxxxxxxx......ccc.
-c......cc.........c................c....................c.cccccccccccccc......ccc.
+c.p....ccc.........................cccccccccccccccccccccc.xxxxxxxxxxxxxx......ccc.
+c.......c.........c................c....................c.cccccccccccccc......ccc.
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.c....................c.c............c......ccc.
 cccccccccccccccccccccccccccccccccc.c....................c.c............c......ccc.
 c................................c.c....................c.c............c......ccc.
