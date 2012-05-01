@@ -12,9 +12,10 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Vatadoom
 {
-    class Player : WaypointHandler
+    public class Player : WaypointHandler
     {
-        public Rectangle BoundingRectangle;
+        public BoundingBox BoundingRectangle;
+        public Rectangle texRect;
         private Texture2D texture;
         public Physics Physics;
         private Level currentLevel;
@@ -26,7 +27,8 @@ namespace Vatadoom
         public Player(Game game, Vector2 pos, Level level)
         {
             texture = game.Content.Load<Texture2D>("Player/player");
-            BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, texture.Width, texture.Height);
+            BoundingRectangle = new BoundingBox(new Vector3(pos.X, pos.Y, 0.0f), new Vector3(pos.X + texture.Width, pos.Y + texture.Height, 0.0f));
+            texRect = new Rectangle((int)pos.X, (int)pos.Y, texture.Width, texture.Height);
             Physics = new Physics();
             Physics.Velocity = jumpSpeed;
             currentLevel = level;
@@ -38,7 +40,9 @@ namespace Vatadoom
         /// <param name="spawn">Point specifying spawn position in level grid</param>
         public void resetRectangle(Point spawn)
         {
-            BoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40);
+            BoundingRectangle.Min = new Vector3(spawn.X * 60, spawn.Y * 40, 0.0f);
+            BoundingRectangle.Max = new Vector3(BoundingRectangle.Min.X + 60, BoundingRectangle.Min.Y + 80, 0.0f);
+            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
             Physics.Velocity = jumpSpeed;
             canClimb = false;
             climbing = false;
@@ -53,13 +57,17 @@ namespace Vatadoom
                 // move right
                 if (Keyboard.GetState().IsKeyDown(Keys.D))
                 {
-                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, moveSpeed, gameTime).X, 0);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X + Physics.horizontalMotion(BoundingRectangle.Min, moveSpeed, gameTime).X, BoundingRectangle.Min.Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X + Physics.horizontalMotion(BoundingRectangle.Max, moveSpeed, gameTime).X, BoundingRectangle.Max.Y, BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                 }
 
                 // move left
                 if (Keyboard.GetState().IsKeyDown(Keys.A))
                 {
-                    BoundingRectangle.Offset((int)Physics.horizontalMotion(BoundingRectangle.Center, -moveSpeed, gameTime).X, 0);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X + Physics.horizontalMotion(BoundingRectangle.Min, -moveSpeed, gameTime).X, BoundingRectangle.Min.Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X + Physics.horizontalMotion(BoundingRectangle.Max, -moveSpeed, gameTime).X, BoundingRectangle.Max.Y, BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                 }
 
                 if (Keyboard.GetState().IsKeyDown(Keys.W))
@@ -67,7 +75,9 @@ namespace Vatadoom
                     if (canClimb)
                     {
                         climbing = true;
-                        BoundingRectangle.Offset(0, -(int)Physics.staticVerticalMotion(BoundingRectangle.Center, moveSpeed, gameTime).Y);
+                        BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -Physics.staticVerticalMotion(BoundingRectangle.Min, moveSpeed, gameTime).Y, BoundingRectangle.Min.Z);
+                        BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Max.Y + -Physics.staticVerticalMotion(BoundingRectangle.Max, moveSpeed, gameTime).Y, BoundingRectangle.Max.Z);
+                        texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                     }
                 }
 
@@ -79,7 +89,9 @@ namespace Vatadoom
                 // jump under the effects of gravity
                 if (Keyboard.GetState().IsKeyDown(Keys.Space))
                 {
-                    BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -Physics.dynamicVerticalMotion(BoundingRectangle.Min, Physics.Velocity, gameTime).Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y + 80, BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                 }
 
                 // simulate gravity
@@ -89,7 +101,9 @@ namespace Vatadoom
                     {
                         if (Physics.Velocity > 0.0f)
                             Physics.Velocity = 0.0f;
-                        BoundingRectangle.Offset(0, -((int)Physics.dynamicVerticalMotion(BoundingRectangle.Center, Physics.Velocity, gameTime).Y));
+                        BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -Physics.dynamicVerticalMotion(BoundingRectangle.Min, Physics.Velocity, gameTime).Y, BoundingRectangle.Min.Z);
+                        BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y + 80, BoundingRectangle.Max.Z);
+                        texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                     }
                 }
             }
@@ -97,7 +111,7 @@ namespace Vatadoom
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, BoundingRectangle, Color.White);
+            spriteBatch.Draw(texture, texRect, Color.White);
         }
 
         /// <summary>
@@ -134,26 +148,34 @@ namespace Vatadoom
                         // colliding with a block to your right
                         if (side == 0)
                         {
-                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BoundingRectangle.Location.Y);
+                            BoundingRectangle.Min.X = tile.BoundingRectangle.Min.X - 60;
+                            BoundingRectangle.Max.X = tile.BoundingRectangle.Min.X;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                         }
 
                         // colliding with a block to your left
                         else if (side == 1)
                         {
-                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BoundingRectangle.Location.Y);
+                            BoundingRectangle.Min.X = tile.BoundingRectangle.Max.X;
+                            BoundingRectangle.Max.X = BoundingRectangle.Min.X + 60;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                         }
 
                         // hitting a solid block from beneath, so block movement
                         else if (side == 2)
                         {
-                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Bottom);
+                            BoundingRectangle.Min.Y = tile.BoundingRectangle.Max.Y;
+                            BoundingRectangle.Max.Y = BoundingRectangle.Min.Y + 80;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                             if (Physics.Velocity > 0.0f)
                                 Physics.Velocity = 0.0f;
                         }
 
                         else if (side == 3 && !ridingVehicle)
                         {
-                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
+                            BoundingRectangle.Min.Y = tile.BoundingRectangle.Min.Y - 80;
+                            BoundingRectangle.Max.Y = tile.BoundingRectangle.Min.Y;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                             Physics.Velocity = jumpSpeed;
                         }
                     }
@@ -163,7 +185,9 @@ namespace Vatadoom
                 {
                     if (side == 3 && !ridingVehicle)
                     {
-                        BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 80);
+                        BoundingRectangle.Min.Y = tile.BoundingRectangle.Min.Y - 80;
+                        BoundingRectangle.Max.Y = tile.BoundingRectangle.Min.Y;
+                        texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                         Physics.Velocity = jumpSpeed;
                     }
                 }
@@ -183,7 +207,9 @@ namespace Vatadoom
                 if (BoundingRectangle.Intersects(w.BoundingRectangle))
                 {
                     ridingVehicle = true;
-                    BoundingRectangle.Location = new Point(w.BoundingRectangle.X, w.BoundingRectangle.Y - 80);
+                    BoundingRectangle.Min = new Vector3(w.BoundingRectangle.Min.X, w.BoundingRectangle.Min.Y - 80, 0.0f);
+                    BoundingRectangle.Max = new Vector3(w.BoundingRectangle.Max.X, w.BoundingRectangle.Min.Y, 0.0f);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                 }
             }
 
@@ -192,7 +218,9 @@ namespace Vatadoom
                 if (BoundingRectangle.Intersects(w.BoundingRectangle))
                 {
                     ridingVehicle = true;
-                    BoundingRectangle.Location = new Point(BoundingRectangle.X, w.BoundingRectangle.Y - 80);
+                    BoundingRectangle.Min = new Vector3(w.BoundingRectangle.Min.X, w.BoundingRectangle.Min.Y - 80, 0.0f);
+                    BoundingRectangle.Max = new Vector3(w.BoundingRectangle.Max.X, w.BoundingRectangle.Min.Y, 0.0f);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
                 }
             }
         }

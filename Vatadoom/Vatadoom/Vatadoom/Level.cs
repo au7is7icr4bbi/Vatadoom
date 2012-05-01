@@ -21,18 +21,18 @@ namespace Vatadoom
         private Layer[] layers;
         private Tile[][] tiles;
         // private TileLayer[] tileLayers;
-        private Boss boss;
+        public Boss boss { get; set; }
         private Dictionary<String, Texture2D> textures;
-        private Player player;
-        private Point spawn; // represents map grid coordinates, for use with save points
+        public Player player { get; private set; }
+        public Point spawn { get; set; } // represents map grid coordinates, for use with save points
         private int levelx;
         private int width;
         private int height;
-        private Random r;
         private Vehicle vehicle;
         private SpriteBatch spriteBatch;
         private float cameraXPosition;
         private float cameraYPosition;
+        private float cameraZPosition;
         private Point vehicleSpawn;
         public Dictionary<String, Waypoint> waypoints { get; set; }
         private Song backingTrack;
@@ -41,9 +41,8 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 0;
+            levelx = 4;
             this.spriteBatch = spriteBatch;
-            r = new Random();
             layers = new Layer[3];
             layers[0] = new Layer(Game.Content, "Backgrounds/Layer0", 0.2f);
             layers[1] = new Layer(Game.Content, "Backgrounds/Layer1", 0.5f);
@@ -113,6 +112,7 @@ namespace Vatadoom
                 case 4:
                     // rooftops with spinner
                     textures.Add("buildingWall", Game.Content.Load<Texture2D>("Tiles/buildingWall"));
+                    textures.Add("buildingInterior", Game.Content.Load<Texture2D>("Tiles/buildingInterior"));
                     textures.Add("powerline", Game.Content.Load<Texture2D>("Tiles/powerline"));
                     break;
                 case 5: // case 5
@@ -151,7 +151,7 @@ namespace Vatadoom
         {
             player.Update(gameTime);
 
-            if (player.BoundingRectangle.Bottom >= height * 40)
+            if (player.BoundingRectangle.Max.Y >= height * 40)
             {
                 // player has fell to their death. Respawn
                 player.resetRectangle(spawn);
@@ -160,68 +160,66 @@ namespace Vatadoom
             else
             {
                 // block below the player
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 - 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Bottom / 40], 3, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60 + 1][player.BoundingRectangle.Bottom / 40], 3, gameTime);
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 - 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                player.testCollisions(tiles[((int)player.BoundingRectangle.Min.X) / 60][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 + 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
             }
 
-            if (player.BoundingRectangle.Top <= 0)
+            if (player.BoundingRectangle.Min.Y <= 0)
             {
                 // block vertical movement off the game screen
-                player.BoundingRectangle.Location = new Point(player.BoundingRectangle.Location.X, 0);
+                player.BoundingRectangle.Min.Y = 0;
             }
             else
             {
                 // block immediately above the player
                 //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
-                player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40 - 1], 2, gameTime);
                 //player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40 + 1], 2, gameTime);
             }
 
             // block movement off the screen
-            if (player.BoundingRectangle.Left <= 0)
+            if (player.BoundingRectangle.Min.X <= 0)
             {
-                player.BoundingRectangle.Location = new Point(0, player.BoundingRectangle.Location.Y);
+                player.BoundingRectangle.Min.X = 0;
             }
 
             else
             {
                 // block immediately to the left
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40], 1, gameTime); // leg height
-                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40 - 1], 1, gameTime); // leg height
-                player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40 - 1], 1, gameTime); // head height
-                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Bottom / 40], 1, gameTime); // head height
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40], 1, gameTime); // leg height
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40 + 1], 1, gameTime); // head height
             }
 
-            if (player.BoundingRectangle.Right >= width * 60)
+            if (player.BoundingRectangle.Max.X >= width * 60)
             {
-                player.BoundingRectangle.Location = new Point(width * 60 - 60, player.BoundingRectangle.Y);
+                player.BoundingRectangle.Max.X = width * 60 - 60;
             }
 
             else
             {
                 // block immediately to the right, at head height
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40], 0, gameTime); // leg height
-                player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Bottom / 40 - 1], 0, gameTime); // head height
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Max.X / 60][(int)player.BoundingRectangle.Min.Y / 40], 0, gameTime); // leg height
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Max.X / 60][(int)player.BoundingRectangle.Min.Y / 40 + 1], 0, gameTime); // head height
             }
 
             // detect internal collisions. Used for waypoints
-            player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Center.Y / 40 - 1], 4, gameTime);
-            player.testCollisions(tiles[player.BoundingRectangle.Center.X / 60][player.BoundingRectangle.Center.Y / 40], 4, gameTime);
+            player.testCollisions(tiles[((int)player.BoundingRectangle.Min.X + 30) / 60][((int)player.BoundingRectangle.Min.Y + 40) / 40 - 1], 4, gameTime);
+            player.testCollisions(tiles[((int)player.BoundingRectangle.Min.X + 30) / 60][((int)player.BoundingRectangle.Min.Y + 40) / 40], 4, gameTime);
 
-            if (vehicle != null)
+            if (vehicle != null && player.ridingVehicle)
             {
                 vehicle.Update(gameTime);
                 if (vehicle.Type != Vehicle.VehicleType.Lift)
                 {
-                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40], 1, gameTime);
-                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Right / 60][vehicle.BoundingRectangle.Center.Y / 40], 0, gameTime);
+                    vehicle.testCollisions(tiles[(int)vehicle.BoundingRectangle.Min.X / 60 - 1][(int)vehicle.BoundingRectangle.Min.Y / 40], 1, gameTime);
+                    vehicle.testCollisions(tiles[(int)vehicle.BoundingRectangle.Max.X / 60 + 1][(int)vehicle.BoundingRectangle.Min.Y / 40], 0, gameTime);
                 }
                 else
                 {
-                    vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Left / 60][vehicle.BoundingRectangle.Center.Y / 40 - 1], 4, gameTime);
+                    vehicle.testCollisions(tiles[(int)vehicle.BoundingRectangle.Min.X / 60][(int)vehicle.BoundingRectangle.Min.Y / 40], 4, gameTime);
                 }
-                if (vehicle.BoundingRectangle.Bottom >= height * 40)
+                if (vehicle.BoundingRectangle.Max.Y >= height * 40)
                 {
                     player.resetRectangle(spawn);
                     vehicle.resetRectangle(vehicleSpawn);
@@ -229,7 +227,7 @@ namespace Vatadoom
                 else
                 {
                     if (vehicle.Type != Vehicle.VehicleType.Lift)
-                        vehicle.testCollisions(tiles[vehicle.BoundingRectangle.Center.X / 60][vehicle.BoundingRectangle.Bottom / 40], 3, gameTime);
+                        vehicle.testCollisions(tiles[(int)vehicle.BoundingRectangle.Min.X / 60][(int)vehicle.BoundingRectangle.Max.Y / 40 - 1], 3, gameTime);
                 }
             }
 
@@ -243,11 +241,10 @@ namespace Vatadoom
 
         public override void Draw(GameTime gameTime)
         {
-            /*
             spriteBatch.Begin();
-            for (int i = 0; i <= EntityLayer; ++i)
-                layers[i].Draw(spriteBatch, cameraPosition);
-            spriteBatch.End();*/
+            for (int i = 0; i <= 2; ++i)
+                layers[i].Draw(spriteBatch, cameraXPosition);
+            spriteBatch.End();
 
             ScrollCamera(spriteBatch.GraphicsDevice.Viewport);
             Matrix cameraTransform = Matrix.CreateTranslation(-cameraXPosition, -cameraYPosition, 0.0f);
@@ -275,7 +272,7 @@ namespace Vatadoom
             spriteBatch.End();
 
             spriteBatch.Begin();
-            for (int i = /*EntityLayer + 1*/0; i < layers.Length; ++i)
+            for (int i = 3; i < layers.Length; ++i)
                 layers[i].Draw(spriteBatch, cameraXPosition);
             spriteBatch.End();
             base.Draw(gameTime);
@@ -299,79 +296,79 @@ namespace Vatadoom
                 {
                     case 'w':
                         // waypoint
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint, 0.0f);
                         break;
                     case 'p':
                         // player tile. Spawn the player here
-                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Player);
+                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Player, 0.0f);
                         spawn = new Point(x, y);
                         break;
                     case 'P':
                         // platform
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform, 0.0f);
                         break;
                     case 'W':
-                        tiles[x][y] = new Tile(textures["sewerWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerWall);
+                        tiles[x][y] = new Tile(textures["sewerWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerWall, 0.0f);
                         break;
                     case 'S':
-                        tiles[x][y] = new Tile(textures["sewerInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerInterior);
+                        tiles[x][y] = new Tile(textures["sewerInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.SewerInterior, 0.0f);
                         break;
                     case 'V':
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
-                        waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Point(x, y)));
-                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40), this);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint, 0.0f);
+                        waypoints.Add("spinner", new Waypoint(Waypoint.WaypointType.Spinner, player, new Vector2(x * 60, y * 40), 0.0f));
+                        vehicle = new Vehicle(Game, player, Vehicle.VehicleType.Spinner, new Vector2(x * 60, y * 40), this);
                         vehicleSpawn = new Point(x, y);
                         break;
                     case '.':
                         // air
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Air);
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Air, 0.0f);
                         break;
                     case 'x':
                         // road
                         // swap between the two different textures
                         if (swap)
-                            tiles[x][y] = new Tile(textures["road0"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures["road0"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road, 0.0f);
                         else
-                            tiles[x][y] = new Tile(textures["road1"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road);
+                            tiles[x][y] = new Tile(textures["road1"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Road, 0.0f);
                         break;
                     case 'X':
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
-                        waypoints.Add("X", new Waypoint(Waypoint.WaypointType.EndRide, vehicle, new Point(x, y)));
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint, 0.0f);
+                        waypoints.Add("X", new Waypoint(Waypoint.WaypointType.EndRide, vehicle, new Vector2(x * 60, y * 40), 0.0f));
                         break;
                     case 'c':
-                        tiles[x][y] = new Tile(textures["concrete"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete);
+                        tiles[x][y] = new Tile(textures["concrete"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Concrete, 0.0f);
                         break;
                     case 's':
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
-                        waypoints.Add("s", new Waypoint(Waypoint.WaypointType.SavePoint, this, new Point(x, y)));
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint, 0.0f);
+                        waypoints.Add("s", new Waypoint(Waypoint.WaypointType.SavePoint, this, new Vector2(x * 60, y * 40), 0.0f));
                         break;
                     case 'e':
-                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint);
-                        waypoints.Add("e", new Waypoint(Waypoint.WaypointType.EndLevel, this, new Point(x, y)));
+                        tiles[x][y] = new Tile(new Vector2(x * 60.0f, y * 40), Tile.TileType.Waypoint, 0.0f);
+                        waypoints.Add("e", new Waypoint(Waypoint.WaypointType.EndLevel, this, new Vector2(x * 60, y * 40), 0.0f));
                         break;
                     case 'E':
-                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Boss);
+                        tiles[x][y] = new Tile(new Vector2(x * 60, y * 40), Tile.TileType.Boss, 0.0f);
                         boss = new Boss(Game, x * 60, y * 40, this);
                         break;
                     case 'B':
-                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior);
+                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingInterior, 0.0f);
                         break;
                     case 'b':
-                        tiles[x][y] = new Tile(textures["buildingWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingWall);
+                        tiles[x][y] = new Tile(textures["buildingWall"], new Vector2(x * 60.0f, y * 40), Tile.TileType.BuildingWall, 0.0f);
                         break;
                     case '-':
-                        tiles[x][y] = new Tile(textures["buildingPlatform"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform);
+                        tiles[x][y] = new Tile(textures["buildingPlatform"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Platform, 0.0f);
                         break;
                     case '|':
-                        tiles[x][y] = new Tile(textures["ladder"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder);
+                        tiles[x][y] = new Tile(textures["ladder"], new Vector2(x * 60.0f, y * 40), Tile.TileType.Ladder, 0.0f);
                         break;
                     case 'l':
-                        tiles[x][y] = new Tile(textures["powerline"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Powerline);
+                        tiles[x][y] = new Tile(textures["powerline"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Powerline, 0.0f);
                         break;
                     case 'L':
-                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint);
-                        vehicle = new Vehicle(Game, ref player, Vehicle.VehicleType.Lift, new Vector2(x * 60, (y + 1) * 40), this);
-                        waypoints.Add("lift", new Waypoint(Waypoint.WaypointType.Lift, player, new Point(x, y)));
+                        tiles[x][y] = new Tile(textures["buildingInterior"], new Vector2(x * 60.0f, y * 40.0f), Tile.TileType.Waypoint, 0.0f);
+                        vehicle = new Vehicle(Game, player, Vehicle.VehicleType.Lift, new Vector2(x * 60, (y + 1) * 40), this);
+                        waypoints.Add("lift", new Waypoint(Waypoint.WaypointType.Lift, player, new Vector2(x * 60, y * 40), 0.0f));
                         if (waypoints["X"] != null)
                             waypoints["X"].handler = vehicle;
                         vehicleSpawn = new Point(x, y);
@@ -425,14 +422,14 @@ namespace Vatadoom
             float cameraHMovement = 0.0f;
             float cameraVMovement = 0.0f;
 
-            if (player.BoundingRectangle.X < marginLeft)
-                cameraHMovement = player.BoundingRectangle.X - marginLeft;
-            else if (player.BoundingRectangle.X > marginRight)
-                cameraHMovement = player.BoundingRectangle.X - marginRight;
-            if (player.BoundingRectangle.Y < marginTop)
-                cameraVMovement = player.BoundingRectangle.Y - marginTop;
-            else if (player.BoundingRectangle.Y > marginBottom)
-                cameraVMovement = player.BoundingRectangle.Y - marginBottom;
+            if (player.BoundingRectangle.Min.X < marginLeft)
+                cameraHMovement = player.BoundingRectangle.Min.X - marginLeft;
+            else if (player.BoundingRectangle.Max.X > marginRight)
+                cameraHMovement = player.BoundingRectangle.Max.X - marginRight;
+            if (player.BoundingRectangle.Min.Y < marginTop)
+                cameraVMovement = player.BoundingRectangle.Min.Y - marginTop;
+            else if (player.BoundingRectangle.Max.Y > marginBottom)
+                cameraVMovement = player.BoundingRectangle.Max.Y - marginBottom;
 
             // Update the camera position, but prevent scrolling off the ends of the level.
             float maxCameraWidthPosition = 60.0f * width - viewport.Width;
@@ -453,10 +450,10 @@ namespace Vatadoom
                 {
                     Point oldSpawn = spawn;
                     Vector2 pos = new Vector2(((float)oldSpawn.X * 60.0f), (float)(oldSpawn.Y * 40.0f));
-                    tiles[oldSpawn.X][oldSpawn.Y] = new Tile(pos, Tile.TileType.Air);
-                    spawn = w.TileCoords;
+                    tiles[oldSpawn.X][oldSpawn.Y] = new Tile(pos, Tile.TileType.Air, 0.0f);
+                    spawn = new Point((int)w.TileCoords.X, (int)w.TileCoords.Y);
                     // overwrite the waypoint with the player tile to set the new spawn point
-                    tiles[spawn.X][spawn.Y] = new Tile(new Vector2((float)spawn.X * 60.0f, (float)spawn.Y * 40.0f), Tile.TileType.Player);
+                    tiles[spawn.X / 60][spawn.Y / 40] = new Tile(new Vector2((float)spawn.X / 60.0f, (float)spawn.Y / 40.0f), Tile.TileType.Player, 0.0f);
                 }
             }
             else if (w.Type == Waypoint.WaypointType.EndLevel)

@@ -28,19 +28,19 @@ namespace Vatadoom
         };
 
         public WaypointHandler handler;
-        public Rectangle BoundingRectangle { get; set; }
-        public Point TileCoords { get; set; }
+        public BoundingBox BoundingRectangle { get; set; }
+        public Vector2 TileCoords { get; set; }
         public WaypointType Type { get; private set; }
         
-        public Waypoint(WaypointType type, WaypointHandler h, Point tileCoords)
+        public Waypoint(WaypointType type, WaypointHandler h, Vector2 tileCoords, float depth)
         {
             Type = type;
             handler = h;
             TileCoords = tileCoords;
             if (type == WaypointType.Lift)
-                BoundingRectangle = new Rectangle(tileCoords.X * 60, tileCoords.Y * 40, 300, 40);
+                BoundingRectangle = new BoundingBox(new Vector3(tileCoords.X, tileCoords.Y, depth), new Vector3(tileCoords.X + 300, tileCoords.Y + 40, depth));
             else
-                BoundingRectangle = new Rectangle(tileCoords.X * 60, tileCoords.Y * 40, 60, 40);
+                BoundingRectangle = new BoundingBox(new Vector3(tileCoords.X, tileCoords.Y, depth), new Vector3(tileCoords.X + 60, tileCoords.Y + 40, depth));
         }
 
         public void handleEvent()

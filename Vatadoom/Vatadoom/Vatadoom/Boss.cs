@@ -11,19 +11,21 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Vatadoom
 {
-    class Boss
+    public class Boss
     {
         private Game game;
         private int health;
         private Level owner;
         private Texture2D texture;
-        public Rectangle BoundingRectangle { get; private set; }
+        public BoundingBox BoundingRectangle { get; private set; }
+        private Rectangle texRect;
         public Boss(Game game, int x, int y, Level currentLevel)
         {
             health = 100;
             this.game = game;
             texture = game.Content.Load<Texture2D>("Bosses/1");
-            BoundingRectangle = new Rectangle(x, y, texture.Width, texture.Height);
+            BoundingRectangle = new BoundingBox(new Vector3(x, y, 0.0f), new Vector3(x + texture.Width, y + texture.Height, 0.0f));
+            texRect = new Rectangle(x, y, texture.Width, texture.Height);
             owner = currentLevel;
         }
         public void onDefeated()
@@ -49,7 +51,7 @@ namespace Vatadoom
 
         public void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            spriteBatch.Draw(texture, BoundingRectangle, Color.White);
+            spriteBatch.Draw(texture, texRect, Color.White);
         }
     }
 }

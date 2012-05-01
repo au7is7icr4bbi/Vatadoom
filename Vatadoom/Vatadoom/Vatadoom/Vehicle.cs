@@ -24,13 +24,14 @@ namespace Vatadoom
         };
         public VehicleType Type { get; private set; }
         private Player player;
-        public Rectangle BoundingRectangle;
+        public BoundingBox BoundingRectangle;
+        public Rectangle texRect;
         private Game g;
         private Texture2D texture;
         private Physics physics;
         private Level level;
 
-        public Vehicle(Game game, ref Player p, VehicleType type, Vector2 pos, Level curr)
+        public Vehicle(Game game, Player p, VehicleType type, Vector2 pos, Level curr)
         {
             g = game;
             player = p;
@@ -57,15 +58,24 @@ namespace Vatadoom
             physics.Velocity = 200.0f;
             // create the bounding rectangle in world space
             if (Type != VehicleType.Lift)
-                BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y, 60, 40);
+            {
+                BoundingRectangle = new BoundingBox(new Vector3(pos.X, pos.Y, 0.0f), new Vector3(pos.X + 60, pos.Y + 40, 0.0f));
+                texRect = new Rectangle((int)pos.X, (int)pos.Y, 60, 40);
+            }
             else
-                BoundingRectangle = new Rectangle((int)pos.X, (int)pos.Y - 40, 300, 40);
+            {
+                BoundingRectangle = new BoundingBox(new Vector3(pos.X, pos.Y - 40, 0.0f), new Vector3(pos.X + 300, pos.Y, 0.0f));
+                texRect = new Rectangle((int)pos.X, (int)pos.Y - 40, 300, 40);
+            }
             level = curr;
         }
 
         public void resetRectangle(Point spawn)
         {
-            BoundingRectangle.Location = new Point(spawn.X * 60, spawn.Y * 40);
+            BoundingRectangle.Min = new Vector3(spawn.X * 60, spawn.Y * 40, 0.0f);
+            BoundingRectangle.Max = new Vector3(spawn.X * 60 + 60, spawn.Y * 40 + 80, 0.0f);
+            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+            //player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
             physics.Velocity = 200.0f;
         }
 
@@ -75,8 +85,12 @@ namespace Vatadoom
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.Space) && Type != VehicleType.Lift)
                 {
-                    BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
-                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Bottom - 80);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -physics.dynamicVerticalMotion(BoundingRectangle.Min, physics.Velocity, gameTime).Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y + 40, BoundingRectangle.Max.Z);
+                    player.BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y - 80, BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y, BoundingRectangle.Min.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
 
                 if (Keyboard.GetState().IsKeyUp(Keys.Space) && Type != VehicleType.Lift)
@@ -85,39 +99,55 @@ namespace Vatadoom
                     {
                         physics.Velocity = 0.0f;
                     }
-                    BoundingRectangle.Offset(0, -((int)physics.dynamicVerticalMotion(BoundingRectangle.Center, physics.Velocity, gameTime).Y));
-                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, BoundingRectangle.Top - 40);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -physics.dynamicVerticalMotion(BoundingRectangle.Min, physics.Velocity, gameTime).Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y + 80, BoundingRectangle.Max.Z);
+                    player.BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y - 80, BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Min.Y, BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
 
                 // move right
                 if (Keyboard.GetState().IsKeyDown(Keys.D) && Type == VehicleType.Lift)
                 {
-                    player.BoundingRectangle.Offset((int)physics.horizontalMotion(player.BoundingRectangle.Center, 200.0f, gameTime).X, 0);
+                    player.BoundingRectangle.Min = new Vector3(player.BoundingRectangle.Min.X + physics.horizontalMotion(player.BoundingRectangle.Min, 200.0f, gameTime).X, player.BoundingRectangle.Min.Y, player.BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(player.BoundingRectangle.Min.X + physics.horizontalMotion(player.BoundingRectangle.Max, 200.0f, gameTime).X, player.BoundingRectangle.Max.Y, player.BoundingRectangle.Max.Z);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
 
                 // move left
                 if (Keyboard.GetState().IsKeyDown(Keys.A) && Type == VehicleType.Lift)
                 {
-                    player.BoundingRectangle.Offset((int)physics.horizontalMotion(player.BoundingRectangle.Center, -200.0f, gameTime).X, 0);
+                    player.BoundingRectangle.Min = new Vector3(player.BoundingRectangle.Min.X + physics.horizontalMotion(player.BoundingRectangle.Min, -200.0f, gameTime).X, player.BoundingRectangle.Min.Y, player.BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(player.BoundingRectangle.Min.X + physics.horizontalMotion(player.BoundingRectangle.Max, -200.0f, gameTime).X, player.BoundingRectangle.Max.Y, player.BoundingRectangle.Max.Z);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
                 
                 // vehicle will always move left to right, so horizontal motion is always positive
                 if (Type != Vehicle.VehicleType.Lift)
                 {
-                    BoundingRectangle.Offset((int)physics.horizontalMotion(BoundingRectangle.Center, 200.0f, gameTime).X, 0);
-                    player.BoundingRectangle.Location = new Point(BoundingRectangle.Left, player.BoundingRectangle.Top - 40);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X + physics.horizontalMotion(BoundingRectangle.Min, 200.0f, gameTime).X, BoundingRectangle.Min.Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Min.X + physics.horizontalMotion(BoundingRectangle.Max, 200.0f, gameTime).X, BoundingRectangle.Max.Y, BoundingRectangle.Max.Z);
+                    player.BoundingRectangle.Min = new Vector3(player.BoundingRectangle.Min.X, BoundingRectangle.Min.Y - 80, player.BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(player.BoundingRectangle.Max.X, BoundingRectangle.Min.Y, player.BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
                 else
                 {
-                    BoundingRectangle.Offset(0, -(int)physics.staticVerticalMotion(BoundingRectangle.Center, 100.0f, gameTime).Y);
-                    player.BoundingRectangle.Location = new Point(player.BoundingRectangle.Left, BoundingRectangle.Top - 80);
+                    BoundingRectangle.Min = new Vector3(BoundingRectangle.Min.X, BoundingRectangle.Min.Y + -physics.staticVerticalMotion(BoundingRectangle.Min, 100.0f, gameTime).Y, BoundingRectangle.Min.Z);
+                    BoundingRectangle.Max = new Vector3(BoundingRectangle.Max.X, BoundingRectangle.Max.Y + -physics.staticVerticalMotion(BoundingRectangle.Max, 100.0f, gameTime).Y, BoundingRectangle.Max.Z);
+                    player.BoundingRectangle.Min = new Vector3(player.BoundingRectangle.Min.X, BoundingRectangle.Min.Y - 80, player.BoundingRectangle.Min.Z);
+                    player.BoundingRectangle.Max = new Vector3(player.BoundingRectangle.Max.X, BoundingRectangle.Min.Y, player.BoundingRectangle.Max.Z);
+                    texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                    player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                 }
             }
         }
 
         public void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            spriteBatch.Draw(texture, BoundingRectangle, Color.White);
+            spriteBatch.Draw(texture, texRect, Color.White);
         }
 
         public void testCollisions(Tile tile, int side, GameTime gameTime)
@@ -142,22 +172,34 @@ namespace Vatadoom
                         // colliding with a block to your right
                         if (side == 0)
                         {
-                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BoundingRectangle.Location.Y);
-                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
+                            BoundingRectangle.Min.X = tile.BoundingRectangle.Min.X - 60;
+                            BoundingRectangle.Max.X = tile.BoundingRectangle.Min.X;
+                            player.BoundingRectangle.Min.X = BoundingRectangle.Min.X;
+                            player.BoundingRectangle.Max.X = BoundingRectangle.Max.X;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                            player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                             //BottomBoundingRectangle.Location = new Point(tile.BoundingRectangle.Left - 60, BottomBoundingRectangle.Location.Y);
                         }
 
                         // colliding with a block to your left
                         if (side == 1)
                         {
-                            BoundingRectangle.Location = new Point(tile.BoundingRectangle.Right, BoundingRectangle.Location.Y);
-                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
+                            BoundingRectangle.Min.X = tile.BoundingRectangle.Max.X;
+                            BoundingRectangle.Max.X = BoundingRectangle.Min.X + 60;
+                            player.BoundingRectangle.Max.X = BoundingRectangle.Max.X;
+                            player.BoundingRectangle.Min.X = BoundingRectangle.Min.X;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                            player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                         }
 
                         if (side == 3)
                         {
-                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
+                            BoundingRectangle.Min.Y = tile.BoundingRectangle.Min.Y - 40;
+                            BoundingRectangle.Max.Y = tile.BoundingRectangle.Min.Y;
+                            player.BoundingRectangle.Min.Y = BoundingRectangle.Min.Y - 80;
+                            player.BoundingRectangle.Max.Y = BoundingRectangle.Min.Y;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                            player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                             physics.Velocity = 200.0f;
                         }
                     }
@@ -165,8 +207,12 @@ namespace Vatadoom
                     {
                         if (side == 3)
                         {
-                            BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, tile.BoundingRectangle.Top - 40);
-                            player.BoundingRectangle.Location = new Point(BoundingRectangle.Location.X, BoundingRectangle.Top - 80);
+                            BoundingRectangle.Min.Y = tile.BoundingRectangle.Min.Y - 40;
+                            BoundingRectangle.Max.Y = tile.BoundingRectangle.Min.Y;
+                            player.BoundingRectangle.Min.Y = BoundingRectangle.Min.Y - 80;
+                            player.BoundingRectangle.Max.Y = BoundingRectangle.Min.Y;
+                            texRect.Location = new Point((int)BoundingRectangle.Min.X, (int)BoundingRectangle.Min.Y);
+                            player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                             physics.Velocity = 200.0f;
                         }
                     }
@@ -188,7 +234,9 @@ namespace Vatadoom
                         else
                         {
                             player.ridingVehicle = false;
-                            player.BoundingRectangle.Location = new Point(w.TileCoords.X * 60 + 1, w.TileCoords.Y * 40 - 40);
+                            player.BoundingRectangle.Min = new Vector3(w.TileCoords.X + 60, w.TileCoords.Y - 40, 0.0f);
+                            player.BoundingRectangle.Max = new Vector3(player.BoundingRectangle.Min.X + 60, player.BoundingRectangle.Min.Y + 80, 0.0f);
+                            player.texRect.Location = new Point((int)player.BoundingRectangle.Min.X, (int)player.BoundingRectangle.Min.Y);
                         }
                     }
                 }

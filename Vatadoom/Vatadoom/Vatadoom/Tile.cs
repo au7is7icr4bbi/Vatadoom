@@ -42,7 +42,8 @@ namespace Vatadoom
         public CollisionType collisionType { get; private set; }
         public String ID { get; set; }
         private Texture2D texture;
-        public Rectangle BoundingRectangle { get; private set; }
+        private Rectangle texRect;
+        public BoundingBox BoundingRectangle { get; private set; }
 
         /// <summary>
         /// Create a visible tile. Useful for floors, ceilings and walls (both in background and in entity space)
@@ -50,23 +51,24 @@ namespace Vatadoom
         /// <param name="t">The tile texture, pre-loaded in the level</param>
         /// <param name="position">The tile's world coordinates</param>
         /// <param name="type">The tile type, determined when it is initially read in</param>
-        public Tile(Texture2D t, Vector2 position, TileType type)
+        public Tile(Texture2D t, Vector2 position, TileType type, float depth)
         {
             texture = t;
-            BoundingRectangle = new Rectangle((int)position.X, (int)position.Y, 60, 40);
+            BoundingRectangle = new BoundingBox(new Vector3(position.X, position.Y, depth), new Vector3(position.X + 60, position.Y + 40, depth));
             tileType = type;
+            texRect = new Rectangle((int)position.X, (int)position.Y, 60, 40);
             setCollisions();
         }
 
         /// <summary>
-        /// Create an invisible tile. USeful for the spawn tile or waypoint tiles
+        /// Create an invisible tile. Useful for the spawn tile or waypoint tiles
         /// </summary>
         /// <param name="position">The tile's world coordinates</param>
         /// <param name="type">The tile type, determined when it is initially read in</param>
-        public Tile(Vector2 position, TileType type)
+        public Tile(Vector2 position, TileType type, float depth)
         {
             texture = null;
-            BoundingRectangle = new Rectangle((int)position.X, (int)position.Y, 60, 40);
+            BoundingRectangle = new BoundingBox(new Vector3(position.X, position.Y, depth), new Vector3(position.X + 60, position.Y + 40, depth));
             tileType = type;
             setCollisions();
         }
@@ -78,7 +80,7 @@ namespace Vatadoom
         public void Draw(SpriteBatch spriteBatch)
         {
             if (texture != null)
-                spriteBatch.Draw(texture, BoundingRectangle, Color.White);
+                spriteBatch.Draw(texture, texRect, Color.White);
         }
 
         /// <summary>

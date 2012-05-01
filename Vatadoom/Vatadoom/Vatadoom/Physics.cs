@@ -36,7 +36,7 @@ namespace Vatadoom
         /// <param name="velocity">Velocity (this can be chained for gravity and jump arcs using the built-in Velocity property)</param>
         /// <param name="gameTime">Current game time</param>
         /// <returns>The delta between the starting point and ending point</returns>
-        public Vector2 dynamicVerticalMotion(Point startPos, float velocity, GameTime gameTime)
+        public Vector2 dynamicVerticalMotion(Vector3 startPos, float velocity, GameTime gameTime)
         {
             Vector2 endPos = new Vector2();
             endPos.X = startPos.X;
@@ -52,7 +52,7 @@ namespace Vatadoom
         /// <param name="velocity">Velocity (does not need chaining)</param>
         /// <param name="gameTime">Current game time</param>
         /// <returns>The delta between the starting point and the ending point</returns>
-        public Vector2 horizontalMotion(Point startPos, float velocity, GameTime gameTime)
+        public Vector2 horizontalMotion(Vector3 startPos, float velocity, GameTime gameTime)
         {
             Vector2 endPos = new Vector2();
             endPos.X = velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -60,7 +60,7 @@ namespace Vatadoom
             return endPos;
         }
 
-        public Vector2 staticVerticalMotion(Point startPos, float velocity, GameTime gameTime)
+        public Vector2 staticVerticalMotion(Vector3 startPos, float velocity, GameTime gameTime)
         {
             Vector2 endPos = new Vector2();
             endPos.X = startPos.X;
