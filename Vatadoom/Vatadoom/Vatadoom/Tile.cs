@@ -80,7 +80,7 @@ namespace Vatadoom
         public void Draw(SpriteBatch spriteBatch)
         {
             if (texture != null)
-                spriteBatch.Draw(texture, texRect, Color.White);
+                spriteBatch.Draw(texture, new Vector2(BoundingRectangle.Min.X, BoundingRectangle.Min.Y), Color.White);
         }
 
         /// <summary>

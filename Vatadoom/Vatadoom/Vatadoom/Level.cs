@@ -41,7 +41,7 @@ namespace Vatadoom
         {
             // TODO: Construct any child components here
             textures = new Dictionary<String, Texture2D>();
-            levelx = 4;
+            levelx = 0;
             this.spriteBatch = spriteBatch;
             layers = new Layer[3];
             layers[0] = new Layer(Game.Content, "Backgrounds/Layer0", 0.2f);
@@ -160,21 +160,27 @@ namespace Vatadoom
             else
             {
                 // block below the player
-                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 - 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                if (player.BoundingRectangle.Min.X / 60 - 1 > 0 && player.BoundingRectangle.Min.X / 60 + 1 < width)
+                {
+                    player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 - 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                    player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 + 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                }
                 player.testCollisions(tiles[((int)player.BoundingRectangle.Min.X) / 60][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
-                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 + 1][(int)player.BoundingRectangle.Max.Y / 40], 3, gameTime);
+                
             }
 
             if (player.BoundingRectangle.Min.Y <= 0)
             {
                 // block vertical movement off the game screen
                 player.BoundingRectangle.Min.Y = 0;
+                player.BoundingRectangle.Max.Y = player.BoundingRectangle.Min.Y + 80;
             }
             else
             {
                 // block immediately above the player
-                //player.testCollisions(tiles[player.BoundingRectangle.Left / 60][player.BoundingRectangle.Top / 40], 2, gameTime);
-                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40 - 1], 2, gameTime);
+                //player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 - 1][(int)player.BoundingRectangle.Min.Y / 40], 2, gameTime);
+                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)Math.Ceiling(player.BoundingRectangle.Min.Y / 40) - 1], 2, gameTime);
+                //player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60 + 1][(int)player.BoundingRectangle.Min.Y / 40], 2, gameTime);
                 //player.testCollisions(tiles[player.BoundingRectangle.Right / 60][player.BoundingRectangle.Top / 40 + 1], 2, gameTime);
             }
 
@@ -182,18 +188,20 @@ namespace Vatadoom
             if (player.BoundingRectangle.Min.X <= 0)
             {
                 player.BoundingRectangle.Min.X = 0;
+                player.BoundingRectangle.Max.X = player.BoundingRectangle.Min.X + 60;
             }
 
             else
             {
                 // block immediately to the left
-                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40], 1, gameTime); // leg height
-                player.testCollisions(tiles[(int)player.BoundingRectangle.Min.X / 60][(int)player.BoundingRectangle.Min.Y / 40 + 1], 1, gameTime); // head height
+                player.testCollisions(tiles[(int)Math.Ceiling(player.BoundingRectangle.Min.X / 60) - 1][(int)player.BoundingRectangle.Min.Y / 40], 1, gameTime); // leg height
+                player.testCollisions(tiles[(int)Math.Ceiling(player.BoundingRectangle.Min.X / 60) - 1][(int)player.BoundingRectangle.Min.Y / 40 + 1], 1, gameTime); // head height
             }
 
             if (player.BoundingRectangle.Max.X >= width * 60)
             {
                 player.BoundingRectangle.Max.X = width * 60 - 60;
+                player.BoundingRectangle.Min.X = player.BoundingRectangle.Max.X - 60;
             }
 
             else
@@ -413,8 +421,8 @@ namespace Vatadoom
             float marginLeft = cameraXPosition + marginWidth;
             float marginRight = cameraXPosition + viewport.Width - marginWidth;
             
-            const float TopMargin = 0.5f;
-            const float BottomMargin = 0.5f;
+            const float TopMargin = 0.35f;
+            const float BottomMargin = 0.35f;
             float marginTop = cameraYPosition + viewport.Height * TopMargin;
             float marginBottom = cameraYPosition + viewport.Height - viewport.Height * BottomMargin;
 

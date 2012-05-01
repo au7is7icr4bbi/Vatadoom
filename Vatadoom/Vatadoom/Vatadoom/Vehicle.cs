@@ -147,7 +147,7 @@ namespace Vatadoom
 
         public void Draw(SpriteBatch spriteBatch, GameTime gameTime)
         {
-            spriteBatch.Draw(texture, texRect, Color.White);
+            spriteBatch.Draw(texture, new Vector2(BoundingRectangle.Min.X, BoundingRectangle.Min.Y), Color.White);
         }
 
         public void testCollisions(Tile tile, int side, GameTime gameTime)

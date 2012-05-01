@@ -17,7 +17,7 @@ namespace Vatadoom
     /// </summary>
     public class Physics
     {
-        private const float gravity = -100.0f;
+        private const float gravity = -198.0f;
         public float Velocity { get; set; }
         
         /// <summary>
